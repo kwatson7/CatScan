@@ -3,10 +3,14 @@ package serverObjects;
 import java.util.ArrayList;
 import java.util.List;
 
+import serverObjects.Vote.VoteCallback;
+
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
+import com.CatScan.Utils;
 import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseObject;
@@ -16,7 +20,7 @@ import com.tools.WidthHeight;
 public class CatPicture{
 
 	// the object name
-	private static final String OBJECT_NAME = "CatPicture"; 		// the object name for the ParseObject
+	public static final String OBJECT_NAME = "CatPicture"; 		// the object name for the ParseObject
 	
 	// the fields
 	private static final String FILE = "FILE";  					// The filename field for the picture
@@ -51,10 +55,10 @@ public class CatPicture{
 		// put the data into the parse object
 		parse.put(TITLE, title);
 		parse.put(CAPTIONS, captions);
-		//parse.put(USER, user.getParse());
+		parse.put(USER, user.getParse());
 		parse.put(RATING, 0);
 		parse.put(N_COMMENTS, 0);
-		parse.put(N_REPORTS, 0);
+		parse.put(N_REPORTS, 0);		
 		
 		// save the file
 		ParseFile file = new ParseFile(DEFAULT_FILE_NAME, picData);
@@ -67,7 +71,7 @@ public class CatPicture{
 	 * @param parse
 	 */
 	public CatPicture(ParseObject parse){
-		// verify objec type		
+		//TODO: verify object type		
 		this.parse = parse;
 	}
 	
@@ -101,34 +105,108 @@ public class CatPicture{
 	
 	/**
 	 * Return the picture stored as a bitmap. Null if unsuccessful. <br>
-	 * This is slow, so should be called from a background thread.
+	 * We will attempt to read from the device first, and then from the web if unsuccessful <br>
+	 * This is slow, so it should be called from a background thread.
+	 * @param ctx required to read from device, pass null if we want to just read from server
 	 * @param desiredWidth, null to do nothing, input a number of pixels to resize image to this width
-	 * @return
+	 * @return the bitmap data
 	 */
-	public Bitmap getPicture(Integer desiredWidth){
-		ParseFile file = (ParseFile) parse.get(FILE);
-		byte[] data;
-		try {
-			data = file.getData();
-		} catch (ParseException e) {
-			Log.e("CatPicture", e.getMessage());
-			e.printStackTrace();
-			return null;
-		}
+	public Bitmap getPicture(Context ctx, Integer desiredWidth){
+		// try reading data from local device first
+		byte[] data = null;
+		if (ctx != null)
+			data = getPictureFromDevice(ctx);
+		
+		// if the data is null, then read from server
+		if (data == null)
+			data = getPictureFromServer(ctx);
 		if (data == null)
 			return null;
-		// resize data first
+		
+		// resize the data
 		if (desiredWidth != null)
 			data = com.tools.Tools.resizeByteArray(data, new WidthHeight(desiredWidth, desiredWidth), "blackBars", null, 0f);
 		return BitmapFactory.decodeByteArray(data, 0, data.length);
 	}
 	
 	/**
-	 * Return the rating for this post.
+	 * Grab the picture from the server. Write it to local storage if we can grab it
+	 * @param ctx required if we want to store the data locally. Pass null to skip this step
+	 * @return the picture data or null if not found or error
+	 */
+	private byte[] getPictureFromServer(Context ctx){
+		ParseFile file = (ParseFile) parse.get(FILE);
+		byte[] data;
+		try {
+			data = file.getData();
+		} catch (ParseException e) {
+			Log.e(Utils.APP_TAG, e.getMessage());
+			e.printStackTrace();
+			return null;
+		}catch(Exception e){
+			Log.e(Utils.APP_TAG, "get picture error");
+			e.printStackTrace();
+			return null;
+		}
+		if (data == null)
+			return null;
+		
+		// write the data
+		if (ctx != null)
+			Utils.createExternalStoragePrivatePicture(ctx, getId(), data);
+		
+		return data;
+	}
+	
+	/**
+	 * Grab the picture from the device
+	 * @param ctx
+	 * @return The byte[] of the picture or null if unsuccessful
+	 */
+	private byte[] getPictureFromDevice(Context ctx){
+		return Utils.getExternalStoragePrivatePicture(ctx, getId());
+	}
+	
+	public String getId(){
+		return parse.getObjectId();
+	}
+	
+	/**
+	 * Return the rating for this post. <br>
+	 * On a background thread we also validate that the rating is correct
 	 * @return
 	 */
 	public int getRating(){
+		// verify on the background that we have the right rating
+		//validateRating();
+		
+		// return the rating
 		return parse.getInt(RATING);
+	}
+	
+	/**
+	 * Validate that the rating stored in this item is correct. <br>
+	 * That there are actually votes cast that match the rating in this object. <br>
+	 * If not, then we fix the internal rating and save to server.
+	 */
+	private void validateRating(){
+		final CatPicture cat = this;
+		final int internalRating = parse.getInt(RATING);
+		new Thread(new Runnable() {
+			public void run() {
+				int rating = Vote.getRating(cat);
+				int diff = rating - internalRating;
+				if (diff != 0){
+					parse.increment(RATING, diff);
+					try {
+						cat.save();
+					} catch (ParseException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+		}).start();
 	}
 	
 	/**
@@ -140,7 +218,8 @@ public class CatPicture{
 	}
 	
 	/**
-	 * Get the user who created the post
+	 * Get the user who created the post <br>
+	 * *** Make sure any query inludes user, else this will be very slow ***
 	 * @return
 	 */
 	public CatUser getUser(){
@@ -160,10 +239,76 @@ public class CatPicture{
 	}
 	
 	public void saveInBackground(SaveCallback saveCallback){
-		parse.saveInBackground(saveCallback);
+		if (saveCallback != null)
+			parse.saveInBackground(saveCallback);
+		else
+			parse.saveInBackground();
+	}
+	
+	/**
+	 * Save the picture to the server whenever it can.
+	 */
+	public void saveEventuallyDONTUSE(){
+		parse.saveEventually();
 	}
 	
 	public ParseObject getParse(){
 		return parse;
+	}
+	
+	/**
+	 * Upvote the rating for this picture
+	 */
+	private void upVote(){
+		parse.increment(RATING);
+	}
+	
+	/**
+	 * Downvote the given picture
+	 */
+	private void downVote(){
+		parse.increment(RATING, -1);
+	}
+	
+	/**
+	 * Assign the given vote for the current user to the picture
+	 * @param decision
+	 */
+	public void vote(final boolean decision){
+
+		Vote.getVote(Utils.getCurrentUser(), this, new VoteCallback() {
+
+			@Override
+			public void onDone(final Vote vote) {
+				// only do something if it's changed
+				boolean current = vote.getVote();
+				if (decision != current){
+					try{
+						vote.setVote(decision);
+						if (decision)
+							upVote();
+						else
+							downVote();
+
+					}catch(Exception e){
+						Log.e(Utils.APP_TAG, e.getMessage());
+						return;
+					}
+				}else
+					return;
+
+				// save the vote and picture in the background
+				saveInBackground(new SaveCallback() {
+
+					@Override
+					public void done(ParseException arg0) {
+						if (arg0 == null)
+							vote.saveInBackground(null);
+						else
+							Log.e(Utils.APP_TAG, arg0.getMessage());
+					}
+				});			
+			}
+		});
 	}
 }

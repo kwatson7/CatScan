@@ -1,36 +1,86 @@
 package com.CatScan;
 
-import it.sephiroth.android.library.imagezoom.ImageViewTouch;
-
 import java.util.List;
+
+import com.tools.images.ImageLoader;
+import com.tools.images.ImageViewTouch;
 
 import serverObjects.CatPicture;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 
 public class PicturesAdapter
 extends BaseAdapter{
 
-    private List<CatPicture> data;
-    private static LayoutInflater inflater=null;
-    public ImageLoaderZoomView imageLoader; 
-    private int pictureWindowWidth;
-	
-	public PicturesAdapter(Activity act, List<CatPicture> pictures, int pictureWindowWidth){
+	//member variables 
+    private List<CatPicture> data; 										// the list of cat data
+    private static LayoutInflater inflater = null;						// inflator used for views
+    public ImageLoader<String ,CatPicture, CatPicture> imageLoader;	// the imageloader used to load pictures
+    private int pictureWindowWidth; 									// The size of the picture (will be square)
+	private ImageSwitcher imageSwitcher = null;
+	private CatScanActivity act;
+    
+	public PicturesAdapter(final CatScanActivity act, List<CatPicture> pictures, int pictureWindowWidth){
         data = pictures;
+        this.act = act;
         inflater = (LayoutInflater)act.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        imageLoader=new ImageLoaderZoomView(android.R.color.transparent, pictureWindowWidth, pictureWindowWidth);
+		imageLoader = new ImageLoader<String, CatPicture, CatPicture>(
+        		android.R.color.transparent,
+        		pictureWindowWidth,
+        		pictureWindowWidth,
+        		true,
+        		new ImageLoader.LoadImage<CatPicture, CatPicture>() {
+
+        			@Override
+        			public Bitmap onThumbnailLocal(CatPicture thumbnailData) {
+        				return null;
+        			}
+
+        			@Override
+        			public Bitmap onThumbnailWeb(CatPicture thumbnailData) {
+        				return null;
+        			}
+
+        			@Override
+        			public Bitmap onFullSizeLocal(CatPicture fullSizeData,
+        					int desiredWidth, int desiredHeight) {
+        				return null;
+        			}
+
+        			@Override
+        			public Bitmap onFullSizeWeb(CatPicture fullSizeData,
+        					int desiredWidth, int desiredHeight) {
+        				Log.d(Utils.APP_TAG, fullSizeData.getTitle());
+        				return fullSizeData.getPicture(act, desiredWidth);
+        			}
+
+        			@Override
+        			public void createThumbnailFromFull(CatPicture thumbnailData,
+        					CatPicture fullSizeData) {
+        				
+        			}
+        		});
+		
+       // imageLoader = new ImageLoaderZoomView(android.R.color.transparent, pictureWindowWidth, pictureWindowWidth);
         this.pictureWindowWidth = pictureWindowWidth;
+	}
+	
+	/**
+	 * Set an image switcher to be called when we switch images in the adapter
+	 * @param switcher
+	 */
+	public void setImageSwitcher(ImageSwitcher switcher){
+		imageSwitcher = switcher;
 	}
 	
 	@Override
@@ -63,16 +113,16 @@ extends BaseAdapter{
 
         // grab the items to display
         TextView comments = (TextView)vi.findViewById(R.id.comments);
-      //  ImageView image = (ImageView)vi.findViewById(R.id.picture);
         ImageViewTouch image = (ImageViewTouch)vi.findViewById(R.id.picture);
         TextView title = (TextView)vi.findViewById(R.id.title);
         TextView rating = (TextView)vi.findViewById(R.id.rating);
+        ImageView likeButton = (ImageView)vi.findViewById(R.id.thumbs_up);
         
         // get the data
         CatPicture cat = (CatPicture) getItem(position);
         
         // fill the items
-        title.setText(cat.getTitle());
+        title.setText(cat.getUser().getName() + " posted: " + cat.getTitle());
         int n = cat.getNComments();
         String str;
         if (n == 1)
@@ -81,12 +131,31 @@ extends BaseAdapter{
         	str = n + " Comments";
         comments.setText(str);
         rating.setText(Integer.toString(cat.getRating()));
+        
+        // set the correct picture
+        if (act.doWeLikePost(cat.getId()))
+        	likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_selected));
+        else
+        	likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_normal));
+        
 
         // show the view
-        imageLoader.DisplayImage(cat, image);
+        imageLoader.DisplayImage(cat.getId(), cat, cat, image);
+        
+        // call the image switcher
+        if (imageSwitcher != null)
+        	imageSwitcher.onImageSwitch(position);
         
         // return the view
         return vi;
+	}
+	
+	public interface ImageSwitcher{
+		/**
+		 * Called when the image is switched
+		 * @param position The position in the gallery of the new image
+		 */
+		public void onImageSwitch(int position);
 	}
 
 }

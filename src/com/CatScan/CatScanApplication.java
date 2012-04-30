@@ -15,13 +15,15 @@ extends Application {
 		super.onCreate();
 
 		// Add your initialization code here
-		Parse.initialize(this, "Haa5IF2Q2MLn7B97JmjBXGEfGjIg4viWhup4E44f",
-				"IrzOAdNrV8Fda9Mk1GH0J4ExMNgnTS2VG2al61Kf"); 
+		Parse.initialize(this,
+				"ZEkD9DX4sC7uRyxdzokND6GMMY7SVRTtF8Jk93L1",
+				"JTx1zUX94kVINsCpLm4HLI4YDTFcxo4xwbRHlo6t"); 
 
 		ParseUser.enableAutomaticUser();
 		ParseACL defaultACL = new ParseACL();
 		// Optionally enable public read access by default.
 		defaultACL.setPublicReadAccess(true);
+		defaultACL.setPublicWriteAccess(true);
 		ParseACL.setDefaultACL(defaultACL, true);
 	}
 
