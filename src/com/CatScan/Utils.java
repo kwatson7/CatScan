@@ -3,7 +3,6 @@ package com.CatScan;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 
-import serverObjects.CatUser;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -11,6 +10,7 @@ import android.graphics.BitmapFactory;
 import android.os.Environment;
 import android.util.Log;
 
+import com.CatScan.ServerObjects.CatUser;
 import com.parse.ParseUser;
 import com.tools.SuccessReason;
 

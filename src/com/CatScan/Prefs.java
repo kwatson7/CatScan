@@ -9,9 +9,10 @@ public class Prefs {
 	private static final String PREF_FILE = "appInfo.prefs";
 	private static final int MODE_PRIVATE = Context.MODE_PRIVATE;
 	private static final String N_TIMES_USED = "N_TIMES_USED";
+	private static final String KEY_NAME = "KEY_NAME";
 	
 	// default values
-	public static final String DEFAULT_STRING = null;
+	public static final String DEFAULT_STRING = "";
 	public static final long DEFAULT_LONG = -1;
 	public static final int DEFAULT_INT = -1;
 	
@@ -36,6 +37,23 @@ public class Prefs {
 		int n = getNumberTimesOpened(ctx);
 		n++;
 		setIntPref(ctx, N_TIMES_USED, n);
+	}
+	
+	/**
+	 * get the name of the person using this phone
+	 * @return the user's name. "" if not exist
+	 */
+	public static String getName(Context ctx){
+		return getStringPref(ctx, KEY_NAME);
+	}
+	
+	/**
+	 * set the name of the person using this phone
+	 */
+	public static void setName(Context ctx, String name){
+		if (name == null)
+			name = "";
+		setStringPref(ctx, KEY_NAME, name);
 	}
 	
 	// private methods used for helper inside this class

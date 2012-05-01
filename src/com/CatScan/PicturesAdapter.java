@@ -2,10 +2,10 @@ package com.CatScan;
 
 import java.util.List;
 
+import com.CatScan.ServerObjects.CatPicture;
 import com.tools.images.ImageLoader;
 import com.tools.images.ImageViewTouch;
 
-import serverObjects.CatPicture;
 
 import android.app.Activity;
 import android.content.Context;
@@ -122,7 +122,14 @@ extends BaseAdapter{
         CatPicture cat = (CatPicture) getItem(position);
         
         // fill the items
-        title.setText(cat.getUser().getName() + " posted: " + cat.getTitle());
+        String nameWhoPosted = cat.getUser().getName();
+        if (nameWhoPosted == null || nameWhoPosted.length() == 0)
+        	nameWhoPosted = cat.getNameWhoPosted();
+        if (nameWhoPosted == null || nameWhoPosted.length() == 0)
+        	nameWhoPosted = "Someone";
+        String newline = System.getProperty("line.separator");
+        title.setText(nameWhoPosted + " posted:" +newline+ cat.getTitle());
+        title.setSingleLine(false);
         int n = cat.getNComments();
         String str;
         if (n == 1)

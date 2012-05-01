@@ -6,18 +6,23 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import serverObjects.CatPicture;
-import serverObjects.Vote;
 
 import com.CatScan.PicturesAdapter.ImageSwitcher;
+import com.CatScan.ServerObjects.CatPicture;
+import com.CatScan.ServerObjects.Vote;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.tools.CustomActivity;
+import com.tools.DialogWithInputBox;
+import com.tools.ThreeObjects;
+import com.tools.TwoStrings;
 import com.tools.images.MemoryCache;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -49,9 +54,21 @@ extends CustomActivity {
 	private static final int LIMIT_TO_REQUERY = 2;
 	private static final int GRAB_NEXT_N_PICTURES = 3;
 	
+	//enums for activity calls
+		private enum ACTIVITY_CALLS {
+			ASK_USER_NAME;
+			private static ACTIVITY_CALLS convert(int value)
+			{
+				return ACTIVITY_CALLS.class.getEnumConstants()[value];
+			}
+		}
+	
 
 	@Override
 	protected void onCreateOverride(Bundle savedInstanceState) {
+		
+		// ask the user their name
+		askUserName();
 		
 		// save user on first use
 		//TODO: put spinning dialog while doing first connect
@@ -68,11 +85,58 @@ extends CustomActivity {
 		Prefs.incrementNumberTimesUsed(ctx);
 		
 		// find all posts the user likes
+		//TODO: this is slow and needs to be done somewhere else
 		likedPosts = Vote.getPostIdsUserLikes(Utils.getCurrentUser(), null);
 		
+		// set the layout
 		initializeLayout();	
 	}
 	
+	/**
+	 * On first time use, we need to ask the user their name
+	 * @return true if we asked the user, false otherwise.
+	 */
+	private boolean askUserName(){
+		// first time use, we need to ask the user their name
+		if (Prefs.getNumberTimesOpened(ctx) == 0){
+			
+			// find the user's name off phone
+			ThreeObjects<TwoStrings, HashSet<String>, HashSet<String>> self = 
+					com.tools.CustomCursors.findSelfInAddressBook(this);
+			String firstName = null;
+			if (self != null && self.mObject1 != null)
+				firstName = self.mObject1.mObject1;
+			if (firstName == null)
+				firstName = "";
+			
+			// start the dialog
+			Intent intent = new Intent(this, DialogWithInputBox.class);
+			intent.putExtra(DialogWithInputBox.HINT_BUNDLE, "Your Name");
+			intent.putExtra(DialogWithInputBox.DEFAULT_TEXT, firstName);
+			intent.putExtra(DialogWithInputBox.TITLE_BUNDLE, "What's your Name?");
+			startActivityForResult(intent, ACTIVITY_CALLS.ASK_USER_NAME.ordinal());
+			return true;
+		}else
+			return false;
+	}
+	
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data){
+		ACTIVITY_CALLS call = ACTIVITY_CALLS.convert(requestCode);
+		
+		// different types of calls
+		switch(call){
+		// we asked the user their name
+		case ASK_USER_NAME:
+			if (resultCode == Activity.RESULT_OK && data != null){
+				// save the user and store on server
+				String name = data.getStringExtra(DialogWithInputBox.RESULT);
+				Prefs.setName(ctx, name);
+			}
+			break;
+		}
+	}
+
 	public boolean doWeLikePost(String id){
 		return likedPosts.contains(id);
 	}
@@ -100,7 +164,7 @@ extends CustomActivity {
 					bmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
 					byte[] data = baos.toByteArray();
 					try {
-						CatPicture cat = new CatPicture(data, "title "+(i+1), new ArrayList<String>(), Utils.getCurrentUser());
+						CatPicture cat = new CatPicture(data, "title "+(i+1), new ArrayList<String>(), Prefs.getName(ctx), Utils.getCurrentUser());
 						cat.save();
 					} catch (ParseException e) {
 						// TODO Auto-generated catch block

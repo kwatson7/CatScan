@@ -1,9 +1,8 @@
-package serverObjects;
+package com.CatScan.ServerObjects;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import serverObjects.Vote.VoteCallback;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -11,6 +10,7 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.CatScan.Utils;
+import com.CatScan.ServerObjects.Vote.VoteCallback;
 import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseObject;
@@ -30,6 +30,7 @@ public class CatPicture{
 	private static final String RATING = "RATING"; 					// The rating this post has
 	private static final String N_REPORTS = "N_REPORTS";			// The number of reports this post has
 	private static final String N_COMMENTS = "N_COMMENTS"; 			// The number of comments this post has
+	private static final String NAME_WHO_POSTED = "NAME_WHO_POSTED";
 	
 	// other private constants
 	private static final String DEFAULT_FILE_NAME = "FILE_NAME.JPG";// The filename to use when uploading
@@ -42,12 +43,15 @@ public class CatPicture{
 	 * @param picData the picture data returned from camera or picture selector 
 	 * @param title The title of the picture
 	 * @param captions An array list of all the captions that are on the picture
+	 * @param nameWhoPosted the name attached to this post
+	 * @param user the user who posted it
 	 * @throws ParseException 
 	 */
 	public CatPicture(
 			byte[] picData,
 			String title,
 			ArrayList<String> captions,
+			String nameWhoPosted,
 			CatUser user) throws ParseException{
 
 		parse = new ParseObject(OBJECT_NAME);
@@ -58,7 +62,8 @@ public class CatPicture{
 		parse.put(USER, user.getParse());
 		parse.put(RATING, 0);
 		parse.put(N_COMMENTS, 0);
-		parse.put(N_REPORTS, 0);		
+		parse.put(N_REPORTS, 0);	
+		parse.put(NAME_WHO_POSTED, nameWhoPosted);
 		
 		// save the file
 		ParseFile file = new ParseFile(DEFAULT_FILE_NAME, picData);
@@ -71,7 +76,9 @@ public class CatPicture{
 	 * @param parse
 	 */
 	public CatPicture(ParseObject parse){
-		//TODO: verify object type		
+		//TODO: check inputs for other server objects
+		if (!parse.getClassName().equals(OBJECT_NAME))
+			throw new IllegalArgumentException("Only " + OBJECT_NAME + " can be passed into CatPicture");
 		this.parse = parse;
 	}
 	
@@ -101,6 +108,14 @@ public class CatPicture{
 	 */
 	public List<String> getCaptions(){
 		return parse.getList(CAPTIONS);
+	}
+	
+	/**
+	 * Get the name of the person who posted the picture
+	 * @return
+	 */
+	public String getNameWhoPosted(){
+		return parse.getString(NAME_WHO_POSTED);
 	}
 	
 	/**

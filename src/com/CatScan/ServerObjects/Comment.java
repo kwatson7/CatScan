@@ -1,4 +1,4 @@
-package serverObjects;
+package com.CatScan.ServerObjects;
 
 import java.util.ArrayList;
 import java.util.List;
