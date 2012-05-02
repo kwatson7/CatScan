@@ -70,8 +70,10 @@ public final class R {
         public static final int titleHint=0x7f050002;
     }
     public static final class style {
-        public static final int LargeTitleTheme=0x7f060000;
-        public static final int Theme_OTPMain=0x7f060002;
-        public static final int TitlebarBackgroundStyle=0x7f060001;
+        public static final int LargeTitleTheme=0x7f060002;
+        public static final int MyTheme=0x7f060001;
+        public static final int Theme_OTPMain=0x7f060004;
+        public static final int TitlebarBackgroundStyle=0x7f060003;
+        public static final int WindowTitleBackground=0x7f060000;
     }
 }

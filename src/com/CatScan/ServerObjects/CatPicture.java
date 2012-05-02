@@ -270,12 +270,19 @@ public class CatPicture{
 	private byte[] getPictureFromServer(Context ctx, int nTries){
 		Log.i(Utils.APP_TAG, getId()+" getServerPicture");
 		if (nTries <= 0)
-			return null;
-		ParseFile file = getImageFile();
-		file.cancel();
+			return null;		
 		byte[] data;
+		ParseFile file = getImageFile();
 		try {
+			if (!file.isDataAvailable())
+				file.cancel();
 			data = file.getData();
+			if (data == null || data.length == 0){
+				parse.fetchIfNeeded();
+				file = getImageFile();
+				file.cancel();
+				data = file.getData();
+			}
 		} catch (ParseException e) {
 			Log.e(Utils.APP_TAG, e.getMessage());
 			return getPictureFromServer(ctx, nTries-1);
@@ -283,8 +290,8 @@ public class CatPicture{
 			Log.e("TAG", Log.getStackTraceString(e));
 			return getPictureFromServer(ctx, nTries-1);
 		}
-		if (data == null)
-			return null;
+		if (data == null || data.length == 0)
+			return getPictureFromServer(ctx, nTries-1);
 
 		// write the data
 		if (ctx != null)
