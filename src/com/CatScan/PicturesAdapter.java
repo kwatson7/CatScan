@@ -142,7 +142,6 @@ extends BaseAdapter{
         if (cat.getTitle().length() > 0)
         	text +=newline+ cat.getTitle();
         title.setText(text);
-        title.setLayoutParams(new FrameLayout.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
         
         // make the comments string
         int n = cat.getNComments();
