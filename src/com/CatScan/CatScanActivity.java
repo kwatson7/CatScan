@@ -9,19 +9,17 @@ import java.util.List;
 
 import com.CatScan.PicturesAdapter.ImageSwitcher;
 import com.CatScan.ServerObjects.CatPicture;
-import com.CatScan.ServerObjects.Vote;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
-import com.parse.ParseQuery;
 import com.tools.CustomActivity;
 import com.tools.DialogWithInputBox;
+import com.tools.ImageCapture;
 import com.tools.ThreeObjects;
 import com.tools.TwoStrings;
 import com.tools.images.MemoryCache;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -30,6 +28,9 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.Display;
 import android.view.View;
+import android.view.Window;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class CatScanActivity
@@ -42,27 +43,37 @@ extends CustomActivity {
 	private PicturesAdapter adapter; 				// The adapter holding the picture info
 	private List<CatPicture> catsList; 				// The list of cat pictures
 	private int pictureWindowWidth;
+	private int pictureWindowHeight;
 	private int currentAmountOfQueries = 0;
 	private int currentPosition = 0; 				// The current position of the adapter
 	private boolean currentlyQuerying = false;
-	private Context ctx = this;
 	private HashSet<Integer> grabbedPictures = new HashSet<Integer>();
-	private HashSet<String> likedPosts = new HashSet<String>();
+	private ImageCapture imageCaptureHelper;
 	
 	// CONSTANTS
 	private static final int QUERY_BATCH = 10;
 	private static final int LIMIT_TO_REQUERY = 2;
-	private static final int GRAB_NEXT_N_PICTURES = 3;
+	private static final int GRAB_NEXT_N_PICTURES = 0;
+	private static final int verticalPadding = 100;
 	
 	//enums for activity calls
-		private enum ACTIVITY_CALLS {
-			ASK_USER_NAME;
-			private static ACTIVITY_CALLS convert(int value)
-			{
-				return ACTIVITY_CALLS.class.getEnumConstants()[value];
-			}
+	private enum ACTIVITY_CALLS {
+		ASK_USER_NAME, CAMERA_REQUEST, EDIT_PICTURE;
+		private static ACTIVITY_CALLS convert(int value)
+		{
+			return ACTIVITY_CALLS.class.getEnumConstants()[value];
 		}
+	}
 	
+	//enums for task calls
+	private enum TASK_CALLS {
+		SAVE_USER_ON_INITIAL, LAUNCH_ADD_OWN_CAPTIONS;
+		private static TASK_CALLS convert(int value)
+		{
+			return TASK_CALLS.class.getEnumConstants()[value];
+		}
+	}
+
 
 	@Override
 	protected void onCreateOverride(Bundle savedInstanceState) {
@@ -71,27 +82,14 @@ extends CustomActivity {
 		askUserName();
 		
 		// save user on first use
-		//TODO: put spinning dialog while doing first connect
-		try {
-			if (Prefs.getNumberTimesOpened(ctx) == 0)
-				Utils.getCurrentUser().getParse().save();
-		} catch (ParseException e) {
-			Toast.makeText(ctx, "Cannot use app without Server", Toast.LENGTH_LONG).show();
-			finish();
-			return;
-		}
-		
-		// keep track of how many times we use the app
-		Prefs.incrementNumberTimesUsed(ctx);
-		
-		// find all posts the user likes
-		//TODO: this is slow and needs to be done somewhere else
-		likedPosts = Vote.getPostIdsUserLikes(Utils.getCurrentUser(), null);
+		SaveUserOnInitial task = new SaveUserOnInitial(this, TASK_CALLS.SAVE_USER_ON_INITIAL.ordinal());
+		addTask(task);
+		task.execute();
 		
 		// set the layout
 		initializeLayout();	
 	}
-	
+
 	/**
 	 * On first time use, we need to ask the user their name
 	 * @return true if we asked the user, false otherwise.
@@ -126,6 +124,7 @@ extends CustomActivity {
 		
 		// different types of calls
 		switch(call){
+		
 		// we asked the user their name
 		case ASK_USER_NAME:
 			if (resultCode == Activity.RESULT_OK && data != null){
@@ -134,11 +133,76 @@ extends CustomActivity {
 				Prefs.setName(ctx, name);
 			}
 			break;
+			
+		// we a took a picture
+		case CAMERA_REQUEST:
+			if (imageCaptureHelper == null){
+				Toast.makeText(ctx, "Camera error", Toast.LENGTH_LONG).show();
+				return;
+			}
+			
+			// make the intent with all the data required to load the picture
+			Intent intent = imageCaptureHelper.createIntentWithCorrectExtras(ctx, AddCaptionsToImage.class, resultCode, data);
+			if (intent != null)
+				startActivityForResult(intent, ACTIVITY_CALLS.EDIT_PICTURE.ordinal());
+			break;
 		}
 	}
+	
+	/**
+	 * We are going to launch an intent to take a picture
+	 * @param view
+	 */
+	public void takePictureClicked(View view){
+		imageCaptureHelper = new ImageCapture();
+		Intent cameraIntent = imageCaptureHelper.createImageCaptureIntent(ctx);
+		startActivityForResult(cameraIntent, ACTIVITY_CALLS.CAMERA_REQUEST.ordinal()); 
+	}
+	
+	/**
+	 * Share the current picture with an intent
+	 * @param view
+	 */
+	public void sharePicture(View view){
+		String path = catsList.get(currentPosition).getPathToExternalStorage(ctx);
+		if (path == null){
+			Toast.makeText(ctx, "sd card required to share picture!", Toast.LENGTH_LONG).show();
+			return;
+		}
+		com.tools.Tools.sharePicture(
+				ctx,
+				Prefs.getName(ctx) + " shared a picture with you",
+				"Here is a cool Lol cat. You can view more and make your own! Just download CatScan on the android market",
+				path,
+				"Choose a Method to Share");
+	}
+	
+	/**
+	 * Make your own captions with the given picture
+	 * @param view
+	 */
+	public void makeYourOwnCaptions(View view){
+		// grab the path
+		String path = catsList.get(currentPosition).getPathToExternalStorageRaw(ctx);
 
-	public boolean doWeLikePost(String id){
-		return likedPosts.contains(id);
+		// if we have a picture, then launch the activity, otherwise we need to create it
+		if (path != null){
+			// launch the activity
+			Intent intent = ImageCapture.createIntentToPassPhoto(
+					ctx,
+					AddCaptionsToImage.class,
+					null, path);
+			startActivity(intent);
+		}else{
+			
+			// do a task to do it
+			LaunchAddOurOwnCaptionsTask task = new LaunchAddOurOwnCaptionsTask(
+					this,
+					TASK_CALLS.LAUNCH_ADD_OWN_CAPTIONS.ordinal(),
+					catsList.get(currentPosition));
+			addTask(task);
+			task.execute();
+		}
 	}
 	
 	private void testCreateCats(){
@@ -163,13 +227,20 @@ extends CustomActivity {
 					ByteArrayOutputStream baos = new ByteArrayOutputStream();  
 					bmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
 					byte[] data = baos.toByteArray();
+					CatPicture cat = new CatPicture(
+							data,
+							data,
+							"title "+(i+1),
+							new ArrayList<String>(),
+							Prefs.getName(ctx),
+							Utils.getCurrentUser());
 					try {
-						CatPicture cat = new CatPicture(data, "title "+(i+1), new ArrayList<String>(), Prefs.getName(ctx), Utils.getCurrentUser());
 						cat.save();
 					} catch (ParseException e) {
 						// TODO Auto-generated catch block
-						e.printStackTrace();
+						Log.e("TAG", Log.getStackTraceString(e));
 					}
+
 				}
 			}
 		}
@@ -177,8 +248,15 @@ extends CustomActivity {
 	
 	@Override
 	protected void initializeLayout() {
+		
+		final boolean customTitleSupported = requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
+	    
 		// set the layout
 		setContentView(R.layout.pictures_thread);
+		
+		if ( customTitleSupported ) {
+	        getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.title_layout);
+	    }
 
 		// grab references to graphics
 		picturesList = (com.tools.images.CustomGallery) findViewById(R.id.pictures_list);
@@ -187,6 +265,7 @@ extends CustomActivity {
 		// determine size of screen
 		Display display = getWindowManager().getDefaultDisplay();
 		pictureWindowWidth = display.getWidth();
+		pictureWindowHeight = display.getHeight() - verticalPadding;
 		
 		// grab cursor for all the groups
 		getPictures();
@@ -224,7 +303,7 @@ extends CustomActivity {
 			adapter.imageLoader.stopThreads();
 			cache = adapter.imageLoader.getMemoryCache();
 		}
-		adapter = new PicturesAdapter(this, catsList, pictureWindowWidth);
+		adapter = new PicturesAdapter(this, catsList, pictureWindowWidth, pictureWindowHeight);
 		adapter.setImageSwitcher(imageSwitcher);
 		if (cache != null)
 			adapter.imageLoader.restoreMemoryCache(cache);
@@ -250,10 +329,10 @@ extends CustomActivity {
 			// fetch the next picture, so it's ready
 			new Thread(new Runnable() {
 				public void run() {
-					for (int i = 1; i < GRAB_NEXT_N_PICTURES && catsList.size() > position+i; i++){
+					for (int i = 1; i <= GRAB_NEXT_N_PICTURES && catsList.size() > position+i; i++){
 						if (!grabbedPictures.contains(position+i)){
 							grabbedPictures.add(position+i);
-							catsList.get(position+i).getPicture(ctx, pictureWindowWidth);
+							catsList.get(position+i).getPicture(ctx, pictureWindowWidth, pictureWindowHeight);
 						}
 					}
 				}
@@ -271,17 +350,18 @@ extends CustomActivity {
 	 * Find the cursor required for pictures
 	 */
 	private void getPictures(){
+		// keep track if we are querying
 		currentlyQuerying = true;
-		ParseQuery query = new ParseQuery(CatPicture.OBJECT_NAME);
-		//query.setCachePolicy(ParseQuery.CachePolicy.CACHE_ELSE_NETWORK );
-		query.setSkip(currentAmountOfQueries);
-		query.setLimit(QUERY_BATCH);
-		query.include("USER");
-		query.findInBackground(new FindCallback() {
+		
+		// run the query
+		CatPicture.queryCats(currentAmountOfQueries, QUERY_BATCH, new FindCallback() {
 			
 			@Override
 			public void done(List<ParseObject> data, ParseException e) {
+				// not querying anymore
 				currentlyQuerying = false;
+				
+				// we got back data, either initialize the list, or add it to it.
 				if (e == null){
 					if (catsList == null)
 						catsList = CatPicture.convertList(data);
@@ -290,10 +370,13 @@ extends CustomActivity {
 							return;
 						catsList.addAll(CatPicture.convertList(data));
 					}
+					
+					// keep track of how many posts we have loaded
 					currentAmountOfQueries = currentAmountOfQueries + data.size();
+					
+					// fill the adapter
 					fillPictures();
 				}else{
-					e.printStackTrace();
 					Log.e(Utils.APP_TAG, e.getMessage());
 				}
 			}
@@ -302,6 +385,16 @@ extends CustomActivity {
 	
 	public void voteClicked(View view){
 		catsList.get(currentPosition).vote(true);
+		ImageView image = (ImageView) view;
+		image.setImageDrawable(this.getResources().getDrawable(R.drawable.thumbs_up_selected));
+		// up the increment
+		TextView rating = (TextView) findViewById(R.id.rating);
+		int oldRating = 0;
+		try{
+			oldRating = Integer.parseInt(rating.getText().toString());
+		}catch(NumberFormatException  e){}
+		oldRating++;
+		rating.setText(String.valueOf(oldRating));
 	}
 	
 	@Override

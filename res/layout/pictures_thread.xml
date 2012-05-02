@@ -3,6 +3,13 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical">
+<ProgressBar 
+	android:id="@+id/progressBar"
+	android:layout_width="45dp"
+	android:layout_height="45dp"
+	android:indeterminateOnly="true"
+	android:layout_gravity="center"
+/>
 <com.tools.images.CustomGallery
     android:id="@+id/pictures_list"
     android:layout_width="fill_parent"

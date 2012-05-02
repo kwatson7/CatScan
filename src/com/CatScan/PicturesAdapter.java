@@ -3,11 +3,11 @@ package com.CatScan;
 import java.util.List;
 
 import com.CatScan.ServerObjects.CatPicture;
+import com.CatScan.ServerObjects.Vote;
+import com.CatScan.ServerObjects.Vote.VoteCallback;
 import com.tools.images.ImageLoader;
 import com.tools.images.ImageViewTouch;
 
-
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.Log;
@@ -27,17 +27,22 @@ extends BaseAdapter{
     private static LayoutInflater inflater = null;						// inflator used for views
     public ImageLoader<String ,CatPicture, CatPicture> imageLoader;	// the imageloader used to load pictures
     private int pictureWindowWidth; 									// The size of the picture (will be square)
+    private int pictureWindowHeight;
 	private ImageSwitcher imageSwitcher = null;
 	private CatScanActivity act;
     
-	public PicturesAdapter(final CatScanActivity act, List<CatPicture> pictures, int pictureWindowWidth){
+	public PicturesAdapter(
+			final CatScanActivity act,
+			List<CatPicture> pictures,
+			int pictureWindowWidth,
+			int pictureWindowHeight){
         data = pictures;
         this.act = act;
         inflater = (LayoutInflater)act.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		imageLoader = new ImageLoader<String, CatPicture, CatPicture>(
         		android.R.color.transparent,
         		pictureWindowWidth,
-        		pictureWindowWidth,
+        		pictureWindowHeight,
         		true,
         		new ImageLoader.LoadImage<CatPicture, CatPicture>() {
 
@@ -61,7 +66,7 @@ extends BaseAdapter{
         			public Bitmap onFullSizeWeb(CatPicture fullSizeData,
         					int desiredWidth, int desiredHeight) {
         				Log.d(Utils.APP_TAG, fullSizeData.getTitle());
-        				return fullSizeData.getPicture(act, desiredWidth);
+        				return fullSizeData.getPicture(act, desiredWidth, desiredHeight);
         			}
 
         			@Override
@@ -73,6 +78,7 @@ extends BaseAdapter{
 		
        // imageLoader = new ImageLoaderZoomView(android.R.color.transparent, pictureWindowWidth, pictureWindowWidth);
         this.pictureWindowWidth = pictureWindowWidth;
+        this.pictureWindowHeight = pictureWindowHeight;
 	}
 	
 	/**
@@ -106,7 +112,7 @@ extends BaseAdapter{
             vi = inflater.inflate(R.layout.picture_item, null);
             ImageView image2 = (ImageView)vi.findViewById(R.id.picture);
             FrameLayout.LayoutParams params = (android.widget.FrameLayout.LayoutParams) image2.getLayoutParams();
-            params.height = pictureWindowWidth;
+            params.height = pictureWindowHeight;
             params.width = pictureWindowWidth;
             image2.setLayoutParams(params);
         }
@@ -116,20 +122,27 @@ extends BaseAdapter{
         ImageViewTouch image = (ImageViewTouch)vi.findViewById(R.id.picture);
         TextView title = (TextView)vi.findViewById(R.id.title);
         TextView rating = (TextView)vi.findViewById(R.id.rating);
-        ImageView likeButton = (ImageView)vi.findViewById(R.id.thumbs_up);
+        final ImageView likeButton = (ImageView)vi.findViewById(R.id.thumbs_up);
         
         // get the data
         CatPicture cat = (CatPicture) getItem(position);
         
         // fill the items
+        // determine who posted it
         String nameWhoPosted = cat.getUser().getName();
         if (nameWhoPosted == null || nameWhoPosted.length() == 0)
         	nameWhoPosted = cat.getNameWhoPosted();
         if (nameWhoPosted == null || nameWhoPosted.length() == 0)
         	nameWhoPosted = "Someone";
+        
+        // make the title
         String newline = System.getProperty("line.separator");
-        title.setText(nameWhoPosted + " posted:" +newline+ cat.getTitle());
-        title.setSingleLine(false);
+        String text = nameWhoPosted + " posted:";
+        if (cat.getTitle().length() > 0)
+        	text +=newline+ cat.getTitle();
+        title.setText(text);
+        
+        // make the comments string
         int n = cat.getNComments();
         String str;
         if (n == 1)
@@ -137,14 +150,26 @@ extends BaseAdapter{
         else
         	str = n + " Comments";
         comments.setText(str);
+        
+        // set the rating
         rating.setText(Integer.toString(cat.getRating()));
         
-        // set the correct picture
-        if (act.doWeLikePost(cat.getId()))
-        	likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_selected));
-        else
-        	likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_normal));
-        
+        // set the correct picture if we like the post
+        likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_gray));
+        Vote.getVote(Utils.getCurrentUser(), cat, new VoteCallback() {
+			
+			@Override
+			public void onDone(Vote vote) {
+				if (vote.getVote()){
+					likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_selected));
+					likeButton.invalidate();
+				}
+				else{
+					likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_normal));
+					likeButton.invalidate();
+				}
+			}
+		});       	
 
         // show the view
         imageLoader.DisplayImage(cat.getId(), cat, cat, image);

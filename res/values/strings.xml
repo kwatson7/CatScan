@@ -3,5 +3,7 @@
 
     <string name="hello">Hello World, CatScanActivity!</string>
     <string name="app_name">CatScan</string>
+    <string name="titleHint">Title of Cat Picture</string>
+    <string name="captionHint">Enter Caption</string>
 
 </resources>

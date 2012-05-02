@@ -1,25 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical">
-<TextView
-    android:id="@+id/title"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:singleLine="true"
-    android:lines="1"
-    android:layout_gravity="center_horizontal"
-    android:gravity="center"
-    android:padding="5dp"
-    android:textSize="15dp"
-    android:textStyle="bold"
-    android:typeface="serif"
-    android:textColor="@android:color/white"
-/>
-<FrameLayout 
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
 <ProgressBar 
 	android:id="@+id/progressBar"
 	android:layout_width="45dp"
@@ -35,12 +18,26 @@
     android:adjustViewBounds="true"
     android:layout_gravity="center"
 />
-</FrameLayout>
+<TextView
+    android:id="@+id/title"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal|top"
+    android:gravity="center"
+    android:padding="5dp"
+    android:textSize="15dp"
+    android:textStyle="bold"
+    android:typeface="serif"
+    android:textColor="@android:color/white"
+    android:layout_marginTop="3dp"
+    android:background="@color/black25"
+/>
 <LinearLayout 
     android:id="@+id/horizontalLayout"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:layout_gravity="center_horizontal|bottom">
     <ImageView
     	android:id="@+id/thumbs_up"
     	android:layout_width="48dp"
@@ -69,6 +66,17 @@
         android:text="0 Comments"
         android:layout_gravity="center_vertical"
         android:duplicateParentState="false"
+        android:visibility="gone"
+    />
+    <Button 
+        android:id="@+id/makeYourOwnCaptions"
+        android:layout_height="wrap_content"
+        android:layout_width="0px"
+        android:layout_weight="1"
+        android:text="Make Your Own Captions"
+        android:layout_gravity="center_vertical"
+        android:duplicateParentState="false"
+        android:onClick="makeYourOwnCaptions"
     />
     <ImageView
     	android:id="@+id/share"
@@ -77,6 +85,8 @@
     	android:src="@android:drawable/ic_menu_share"
     	android:layout_gravity="center_vertical"
     	android:layout_margin="3dp"
+    	android:onClick="sharePicture"
+    	android:background="@drawable/blue_selector"
 	/>  
 </LinearLayout>
-</LinearLayout>
+</FrameLayout>

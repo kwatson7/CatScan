@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="LargeTitleTheme">
+        <item name="android:windowTitleSize">40dip</item>
+    </style>
+    <style name="TitlebarBackgroundStyle">
+        <item name="android:background">@layout/title_layout</item>
+    </style>
+    <style name="Theme.OTPMain" parent="android:Theme"> 
+        <item name="android:windowTitleBackgroundStyle">@style/TitlebarBackgroundStyle</item>
+    </style>
+</resources>

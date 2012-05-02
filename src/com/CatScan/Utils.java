@@ -19,6 +19,7 @@ public class Utils {
 	public static final String APP_TAG = "CatScan";
 	public static final char pathsep = '/';
 	public static final String FOLDER_NAME = "Cat Scan Pictures";
+	public static final String CAMERA_DATA_KEY = "data";
 	
 	/**
 	 * Return the current User. If there is no user, then an anonymous one is created in the background.
@@ -34,13 +35,12 @@ public class Utils {
 	 * @param ctx The context required to write data
 	 * @param name The name of the file (.jpg will be appended)
 	 * @param data The byte data to write
-	 * @return true if we saved successfully, false otherwise
+	 * @return the filepath or null if no successfull save
 	 */
-	public static boolean createExternalStoragePrivatePicture(Context ctx, String name, byte[] data){ 
+	public static String createExternalStoragePrivatePicture(Context ctx, String name, byte[] data){ 
 
 		try{
-			File path = new File(getExternalStorageDirectory());
-			File file = new File(path, name + ".jpg");
+			File file = getExternalStoreFile(name);
 
 			SuccessReason out = com.tools.Tools.saveByteDataToFile(
 					ctx.getApplicationContext(),
@@ -52,13 +52,13 @@ public class Utils {
 					false);
 			if (!out.getSuccess()){
 				Log.d(Utils.APP_TAG, "file not saved to external storage" + out.getReason());
-				return false;
+				return null;
 			}
+			return file.getAbsolutePath();
 		}catch(Exception e){
 			Log.d(Utils.APP_TAG, "file not saved to external storage");
-			return false;
+			return null;
 		}
-		return true;
 	}
 	
 	/**
@@ -94,8 +94,7 @@ public class Utils {
 	 */
 	public static byte[] getExternalStoragePrivatePicture(Context ctx, String name){
 		try{
-			File path = new File(getExternalStorageDirectory());
-			File file = new File(path, name + ".jpg");
+			File file = getExternalStoreFile(name);
 			Bitmap bmp = BitmapFactory.decodeFile(file.getAbsolutePath());
 			ByteArrayOutputStream stream = new ByteArrayOutputStream();
 			bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream);
@@ -105,5 +104,16 @@ public class Utils {
 			Log.d(Utils.APP_TAG, "file not read from external storage" + e.getMessage());
 			return null;
 		}
+	}
+	
+	/**
+	 * The path to the picture with this name.
+	 * @param name
+	 * @return the file stored externally
+	 */
+	public static File getExternalStoreFile(String name){
+		File path = new File(getExternalStorageDirectory());
+		File file = new File(path, name + ".jpg");
+		return file;
 	}
 }

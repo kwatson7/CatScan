@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:id="@+id/screen">
+<LinearLayout
+	android:id="@+id/dummyView"
+	android:layout_width="0px"
+	android:layout_height="0px"
+	android:focusable="true"
+	android:focusableInTouchMode="true"/>
+<ProgressBar 
+	android:id="@+id/progressBar"
+	android:layout_width="45dp"
+	android:layout_height="45dp"
+	android:indeterminateOnly="true"
+	android:layout_gravity="center"
+/>
+<ImageView
+	android:id="@+id/photo"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:scaleType="fitCenter"
+	android:layout_gravity="center"
+	android:background="@null"
+/>
+<EditText
+    android:id="@+id/title"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:hint="@string/titleHint"
+    android:layout_gravity="center_horizontal"
+    android:gravity="center"
+    android:singleLine="true"
+    android:lines="1"
+    android:imeOptions="actionDone"
+/>
+
+<LinearLayout
+    android:id="@+id/EditorView"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom|center_horizontal" 
+    android:orientation="vertical">
+    <EditText
+        android:id="@+id/captionEditor"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:hint="@string/captionHint"
+        android:imeOptions="actionDone"
+        android:inputType="textCapCharacters"
+        android:lines="1"
+        android:singleLine="true"
+    />
+    
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:id="@+id/linearLayout1">
+        <Button
+            android:id="@+id/makeCaption"
+            android:layout_width="0px"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="makeCaptionClicked"
+            android:text="Make Caption" />
+        <Button
+            android:id="@+id/postPicture"
+            android:layout_width="0px"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="postPicture"
+            android:text="Post Picture" />
+    </LinearLayout>
+
+</LinearLayout>
+
+</FrameLayout>
+    
+    
+
+    

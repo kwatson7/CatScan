@@ -80,7 +80,18 @@ public class Report{
 		return parse.getBoolean(VOTE_VALUE);
 	}
 	
-	public ParseObject getParse(){
+	private ParseObject getParse(){
 		return parse;
+	}
+	
+	/**
+	 * Put this report into the given parseObject <br>
+	 * this is equivalent to parseObject.put(key, report.parse), however
+	 * parse is not set to public, so we do not allow access to it except through this method 
+	 * @param parseObject the parse object
+	 * @param key the key to assign this vote to
+	 */
+	public void putReport(ParseObject parseObject, String key){
+		parseObject.put(key, parse);
 	}
 }

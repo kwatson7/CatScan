@@ -39,8 +39,8 @@ public class Vote{
 		parse = new ParseObject(OBJECT_NAME);
 		
 		// put the data into the parse object
-		parse.put(POST, post.getParse());
-		parse.put(USER, user.getParse());
+		post.putCat(parse, POST);
+		user.putUser(parse, USER);
 		parse.put(VOTE_VALUE, voteValue);
 	}
 	
@@ -97,10 +97,13 @@ public class Vote{
 	public static int getRating(CatPicture post){
 		// query to get all the votes associated with the input post
 		ParseQuery query = new ParseQuery(OBJECT_NAME);
-		query.whereEqualTo(POST, post.getParse());
+		query.whereEqualTo(POST, post.getParseForQuery());
+		
 		// Include the post data with each comment
 		query.include(POST);
 		query.include(USER);
+		
+		// do the query
 		List<Vote> votes;
 		try {
 			votes = Vote.convertList(query.find());
@@ -133,8 +136,8 @@ public class Vote{
 		
 		// query the database to get any votes that connect the user and picture
 		ParseQuery query = new ParseQuery(OBJECT_NAME);
-		query.whereEqualTo(POST, picture.getParse());
-		query.whereEqualTo(USER, user.getParse());
+		query.whereEqualTo(POST, picture.getParseForQuery());
+		query.whereEqualTo(USER, user.getParseForQuery());
 		query.include(POST);
 		query.include(USER);
 		query.findInBackground(new FindCallback() {
@@ -163,7 +166,7 @@ public class Vote{
 		
 		// query the database to get any votes that connect the user
 		ParseQuery query = new ParseQuery(OBJECT_NAME);
-		query.whereEqualTo(USER, user.getParse());
+		query.whereEqualTo(USER, user.getParseForQuery());
 		query.include(POST);
 		
 		// no callback, then just address search on this thread
@@ -240,15 +243,19 @@ public class Vote{
 		public void onDone(HashSet<String> likedPostIds);
 	}
 
-	public ParseObject getParse(){
-		return parse;
+	/**
+	 * Put this vote into the given parseObject <br>
+	 * this is equivalent to parseObject.put(key, vote.parse), however
+	 * parse is not set to public, so we do not allow access to it except through this method 
+	 * @param parseObject the parse object
+	 * @param key the key to assign this vote to
+	 */
+	public void putVote(ParseObject parseObject, String key){
+		parseObject.put(key, parse);
 	}
 	
-	/**
-	 * Save the vote to the server whenever it can.
-	 */
-	public void saveEventuallyDONTUSE(){
-		parse.saveEventually();
+	private ParseObject getParse(){
+		return parse;
 	}
 	
 	public void saveInBackground(SaveCallback saveCallback){

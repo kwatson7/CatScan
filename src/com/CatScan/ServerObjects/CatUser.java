@@ -37,6 +37,8 @@ public class CatUser{
 	 * @param parse
 	 */
 	public CatUser(ParseUser parse){
+		if (parse == null)
+			parse = new ParseUser();
 		this.parse = parse;
 		
 		// store data
@@ -63,6 +65,8 @@ public class CatUser{
 	 * @return
 	 */
 	public String getName(){
+		if (parse == null)
+			return "";
 		String name = parse.getString(NAME);
 		if (name == null)
 			name = "";
@@ -100,7 +104,22 @@ public class CatUser{
 		return getName();
 	}
 	
-	public ParseUser getParse(){
+	/**
+	 * Allow access to internal parse, but only to use for query fields <br> ie .whereEquals(User, user.getParseForQuery)
+	 * @return the internal parse object for this user
+	 */
+	public ParseUser getParseForQuery(){
 		return parse;
+	}
+	
+	/**
+	 * Put this user into the given parseObject <br>
+	 * this is equivalent to parseObject.put(key, user.parse), however
+	 * parse is not set to public, so we do not allow access to it except through this method 
+	 * @param parseObject the parse object
+	 * @param key the key to assign this vote to
+	 */
+	public void putUser(ParseObject parseObject, String key){
+		parseObject.put(key, parse);
 	}
 }
