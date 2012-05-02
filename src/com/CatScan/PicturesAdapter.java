@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.BaseAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -141,6 +142,7 @@ extends BaseAdapter{
         if (cat.getTitle().length() > 0)
         	text +=newline+ cat.getTitle();
         title.setText(text);
+        title.setLayoutParams(new FrameLayout.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
         
         // make the comments string
         int n = cat.getNComments();
