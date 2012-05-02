@@ -2,6 +2,7 @@ package com.CatScan;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import android.app.Activity;
 import android.content.Context;
@@ -237,6 +238,13 @@ extends CustomActivity{
 		
 		// read the title
 		String titleString = title.getText().toString();
+		
+		// if no title, then use the first caption
+		if (titleString == null || titleString.length() == 0){
+			Iterator<String> iterator = captionsArray.iterator();
+			while((titleString == null || titleString.length() == 0) && iterator.hasNext())
+				titleString = iterator.next();
+		}
 
 		// convert bitmap to byte[]
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
