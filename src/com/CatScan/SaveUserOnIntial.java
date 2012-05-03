@@ -38,9 +38,10 @@ class SaveUserOnInitial extends CustomAsyncTask<Void, Void, String>{
 
 	@Override
 	protected void onPostExectueOverride(String result) {
-		if (result != null && result.length() > 0)
+		if (result != null && result.length() > 0){
 			Toast.makeText(applicationCtx, result, Toast.LENGTH_LONG).show();
-		else{
+			sendObjectToActivityFromPostExecute(new Boolean(false));
+		}else{
 			// keep track of how many times we use the app
 			Prefs.incrementNumberTimesUsed(applicationCtx);
 		}

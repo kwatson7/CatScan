@@ -46,6 +46,7 @@ public class CatPicture{
 	private CatPicture catPicture = this;
 	private ParseFile imageFile;
 	private ParseFile rawFile;	
+	private ParseFileHelper parseFileHelper = null;
 	
 	//enums for sort order
 	private enum SortOrder {
@@ -97,6 +98,9 @@ public class CatPicture{
 		ParseFile raw = new ParseFile(DEFAULT_FILE_NAME, rawPicture);
 		this.imageFile = file;
 		this.rawFile = raw;
+		
+		// initialize helper
+		parseFileHelper = new ParseFileHelper(this.parse, file);
 	}
 	
 	/**
@@ -144,6 +148,9 @@ public class CatPicture{
 		if (!parse.getClassName().equals(OBJECT_NAME))
 			throw new IllegalArgumentException("Only " + OBJECT_NAME + " can be passed into CatPicture");
 		this.parse = parse;
+		
+		// initialize helper
+		parseFileHelper = new ParseFileHelper(this.parse, getImageFile());
 	}
 
 	/**
@@ -193,7 +200,7 @@ public class CatPicture{
 	 * @return the bitmap data
 	 */
 	public Bitmap getPicture(Context ctx, Integer desiredWidth, Integer desiredHeight){
-		Log.i(Utils.APP_TAG, getId()+" getPicture");
+
 		// try reading data from local device first
 		byte[] data = null;
 		if (ctx != null)
@@ -208,13 +215,44 @@ public class CatPicture{
 			Log.e(Utils.APP_TAG, "could not get picture");
 			return null;
 		}
-			//return null;
-			//return ((BitmapDrawable)ctx.getResources().getDrawable(R.drawable.missing_picture)).getBitmap();
 
 		// resize the data
 		if (desiredWidth != null && desiredHeight != null)
 			data = com.tools.Tools.resizeByteArray(data, new WidthHeight(desiredWidth, desiredHeight), "resizeSmall", null, 0f);
 		return BitmapFactory.decodeByteArray(data, 0, data.length);
+	}
+	
+	/**
+	 * Fetch the picture and store on file <br>
+	 * This will not try again if we have any errors. See getPicture for better options <br>
+	 * This is only used to attempt to pre-fetch images on background threads
+	 * *** This is slow, so it should be called from a background thread. ***
+	 * @param ctx required to read from device, pass null if we want to just read from server
+	 */
+	public void fetchPictureFromServer(Context ctx){
+
+		// see if the file already exists
+		String path = getPathToExternalStorage(ctx);
+		if (path != null && path.length() != 0 && (new File(path)).exists())
+			return;
+		
+		// now see if we are already fetching using the parse helper
+		if (parseFileHelper.isFetching())
+			return;
+		
+		// if we made it here, then we should fetch the data
+		byte[] data = null;
+		try {
+			data = parseFileHelper.getDataNoWait();
+		} catch (ParseException e) {
+			Log.e("TAG", Log.getStackTraceString(e));
+		}
+		if (data == null || data.length == 0)
+			return;
+
+		// write the data
+		if (ctx != null)
+			Utils.createExternalStoragePrivatePicture(ctx, getId(), data);
 	}
 	
 	/**
@@ -268,6 +306,33 @@ public class CatPicture{
 	 * @return the picture data or null if not found or error
 	 */
 	private byte[] getPictureFromServer(Context ctx, int nTries){
+		// use helper to manage multiple calls
+		if (parseFileHelper == null)
+			parseFileHelper = new ParseFileHelper(parse, getImageFile());
+		byte[] data = null;
+		try {
+			data = parseFileHelper.getData();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			Log.e("TAG", Log.getStackTraceString(e));
+		}
+		if (data == null || data.length == 0)
+			return data;
+
+		// write the data
+		if (ctx != null)
+			Utils.createExternalStoragePrivatePicture(ctx, getId(), data);
+
+		return data;
+	}
+	
+	/**
+	 * Grab the picture from the server. Write it to local storage if we can grab it
+	 * @param ctx required if we want to store the data locally. Pass null to skip this step
+	 * @param nTries number of tries before quitting, enter >= 1
+	 * @return the picture data or null if not found or error
+	 */
+	private byte[] getPictureFromServerSafe(Context ctx, int nTries){
 		Log.i(Utils.APP_TAG, getId()+" getServerPicture");
 		if (nTries <= 0)
 			return null;		

@@ -24,15 +24,18 @@ public final class R {
         public static final int cam_icon_xml=0x7f020004;
         public static final int gray_3d=0x7f020005;
         public static final int ic_launcher=0x7f020006;
-        public static final int missing_picture=0x7f020007;
-        public static final int orange_selector=0x7f020008;
-        public static final int stub=0x7f020009;
-        public static final int thumb_small=0x7f02000a;
-        public static final int thumbs_up_gray=0x7f02000b;
-        public static final int thumbs_up_normal=0x7f02000c;
-        public static final int thumbs_up_selected=0x7f02000d;
-        public static final int title=0x7f02000e;
-        public static final int title_small=0x7f02000f;
+        public static final int ic_menu_refresh=0x7f020007;
+        public static final int icon2_catscan=0x7f020008;
+        public static final int icon_catscan=0x7f020009;
+        public static final int missing_picture=0x7f02000a;
+        public static final int orange_selector=0x7f02000b;
+        public static final int stub=0x7f02000c;
+        public static final int thumb_small=0x7f02000d;
+        public static final int thumbs_up_gray=0x7f02000e;
+        public static final int thumbs_up_normal=0x7f02000f;
+        public static final int thumbs_up_selected=0x7f020010;
+        public static final int title=0x7f020011;
+        public static final int title_small=0x7f020012;
     }
     public static final class id {
         public static final int EditorView=0x7f070006;

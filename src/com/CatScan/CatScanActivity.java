@@ -27,6 +27,8 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.view.Display;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.ImageView;
@@ -52,8 +54,8 @@ extends CustomActivity {
 	
 	// CONSTANTS
 	private static final int QUERY_BATCH = 10;
-	private static final int LIMIT_TO_REQUERY = 2;
-	private static final int GRAB_NEXT_N_PICTURES = 0;
+	private static final int LIMIT_TO_REQUERY = 8;
+	private static final int GRAB_NEXT_N_PICTURES = 5;
 	private static final int verticalPadding = 100;
 	
 	//enums for activity calls
@@ -71,6 +73,15 @@ extends CustomActivity {
 		private static TASK_CALLS convert(int value)
 		{
 			return TASK_CALLS.class.getEnumConstants()[value];
+		}
+	}
+	
+	// menu items
+	private enum MENU_ITEMS {
+		REFRESH;
+		private static MENU_ITEMS convert(int value)
+		{
+			return MENU_ITEMS.class.getEnumConstants()[value];
 		}
 	}
 
@@ -268,7 +279,7 @@ extends CustomActivity {
 		pictureWindowHeight = display.getHeight() - verticalPadding;
 		
 		// grab cursor for all the groups
-		getPictures();
+		getPictures(false);
 	}
 
 	@Override
@@ -287,15 +298,23 @@ extends CustomActivity {
 			adapter.imageLoader.restartThreads();
 		super.onResume();
 	}
+	
+	/**
+	 * Refresh the list of pictures and jump to the first picture
+	 */
+	private void refresh(){
+		currentAmountOfQueries = 0;
+		getPictures(true);
+	}
 
-	// fill list with the pictures
-	private void fillPictures() {
+	/**
+	 * fill list with the pictures
+	 * @param refresh true to jump back to the first item, false otherwise
+	 */
+	private void fillPictures(boolean refresh) {
 		
 		// save index and top position
-		//int index = picturesList.getFirstVisiblePosition();
 		int index = picturesList.getSelectedItemPosition();
-		View v = picturesList.getChildAt(0);
-		int top = (v == null) ? 0 : v.getTop();
 		
 		// set adapter
 		MemoryCache<String> cache = null;
@@ -309,10 +328,11 @@ extends CustomActivity {
 			adapter.imageLoader.restoreMemoryCache(cache);
 		picturesList.setAdapter(adapter);
 		
-		
 		// restore
-		//picturesList.setSelectionFromTop(index, top);
-		picturesList.setSelection(index, false);
+		if (refresh || index >= catsList.size())
+			picturesList.setSelection(0, true);
+		else
+			picturesList.setSelection(index, false);
 	}
 	
 	private ImageSwitcher imageSwitcher = new ImageSwitcher() {
@@ -332,7 +352,7 @@ extends CustomActivity {
 					for (int i = 1; i <= GRAB_NEXT_N_PICTURES && catsList.size() > position+i; i++){
 						if (!grabbedPictures.contains(position+i)){
 							grabbedPictures.add(position+i);
-							catsList.get(position+i).getPicture(ctx, pictureWindowWidth, pictureWindowHeight);
+							catsList.get(position+i).fetchPictureFromServer(ctx);
 						}
 					}
 				}
@@ -341,17 +361,20 @@ extends CustomActivity {
 			
 			// if we are getting close to the end, we need to requery.
 			if (currentPosition + LIMIT_TO_REQUERY >= currentAmountOfQueries && !currentlyQuerying)
-				getPictures();
+				getPictures(false);
 			
 		}
 	};
 
 	/**
 	 * Find the cursor required for pictures
+	 * @param refresh if true, then clear out old data and start fresh, else just append
 	 */
-	private void getPictures(){
+	private void getPictures(final boolean refresh){
 		// keep track if we are querying
 		currentlyQuerying = true;
+		if (refresh)
+			currentAmountOfQueries = 0;
 		
 		// run the query
 		CatPicture.queryCats(currentAmountOfQueries, QUERY_BATCH, new FindCallback() {
@@ -363,6 +386,8 @@ extends CustomActivity {
 				
 				// we got back data, either initialize the list, or add it to it.
 				if (e == null){
+					if (refresh)
+						catsList = null;
 					if (catsList == null)
 						catsList = CatPicture.convertList(data);
 					else{
@@ -372,10 +397,10 @@ extends CustomActivity {
 					}
 					
 					// keep track of how many posts we have loaded
-					currentAmountOfQueries = currentAmountOfQueries + data.size();
+					currentAmountOfQueries = catsList.size();
 					
 					// fill the adapter
-					fillPictures();
+					fillPictures(refresh);
 				}else{
 					Log.e(Utils.APP_TAG, e.getMessage());
 				}
@@ -400,8 +425,20 @@ extends CustomActivity {
 	@Override
 	public void onAsyncExecute(int requestCode, AsyncTypeCall asyncTypeCall,
 			Object data) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Not supported yet.");	
+		TASK_CALLS call = TASK_CALLS.convert(requestCode);
+		
+		// different types of calls
+		switch(call){
+		
+		case SAVE_USER_ON_INITIAL:
+			switch (asyncTypeCall){
+			case POST:
+				if (!((Boolean) data))
+						finish();
+				break;
+			}
+			break;
+		}
 	}
 
 	@Override
@@ -414,5 +451,36 @@ extends CustomActivity {
 	@Override
 	protected void onDestroyOverride() {
 		picturesList.setAdapter(null);
+	}
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		super.onCreateOptionsMenu(menu);
+		MenuItem refresh = menu.add(0,MENU_ITEMS.REFRESH.ordinal(), 0, "Refresh");
+
+		// add icons
+		refresh.setIcon(R.drawable.ic_menu_refresh);
+		
+		return true;
+	}
+
+	@Override
+	public boolean onMenuOpened(int featureId, Menu menu) {
+
+		return super.onMenuOpened(featureId, menu);
+	}
+
+	@Override
+	public boolean onMenuItemSelected(int featureId, MenuItem item) {
+
+		MENU_ITEMS call = MENU_ITEMS.convert(item.getItemId());
+		// decide on what each button should od
+		switch(call) {
+		case REFRESH:
+			refresh();
+			return true;
+		}
+
+		return super.onMenuItemSelected(featureId, item);
 	}
 }
