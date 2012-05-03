@@ -1,8 +1,5 @@
 package com.CatScan;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -21,10 +18,7 @@ import com.tools.images.MemoryCache;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
@@ -40,6 +34,7 @@ extends CustomActivity {
 
 	// graphics
 	private com.tools.images.CustomGallery picturesList;  	// the main gallery
+	private ImageView backgroundImage;
 
 	// misc variables
 	private PicturesAdapter adapter; 				// The adapter holding the picture info
@@ -60,7 +55,7 @@ extends CustomActivity {
 	
 	//enums for activity calls
 	private enum ACTIVITY_CALLS {
-		ASK_USER_NAME, CAMERA_REQUEST, EDIT_PICTURE;
+		ASK_USER_NAME, CAMERA_REQUEST, EDIT_PICTURE, PICTURE_REQUEST;
 		private static ACTIVITY_CALLS convert(int value)
 		{
 			return ACTIVITY_CALLS.class.getEnumConstants()[value];
@@ -100,33 +95,48 @@ extends CustomActivity {
 		// set the layout
 		initializeLayout();	
 	}
+	
+	@Override
+	protected void initializeLayout() {
+		
+		final boolean customTitleSupported = requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
+	    
+		// set the layout
+		setContentView(R.layout.pictures_thread);
+		
+		if ( customTitleSupported ) {
+	        getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.title_layout);
+	    }
 
-	/**
-	 * On first time use, we need to ask the user their name
-	 * @return true if we asked the user, false otherwise.
-	 */
-	private boolean askUserName(){
-		// first time use, we need to ask the user their name
-		if (Prefs.getNumberTimesOpened(ctx) == 0){
-			
-			// find the user's name off phone
-			ThreeObjects<TwoStrings, HashSet<String>, HashSet<String>> self = 
-					com.tools.CustomCursors.findSelfInAddressBook(this);
-			String firstName = null;
-			if (self != null && self.mObject1 != null)
-				firstName = self.mObject1.mObject1;
-			if (firstName == null)
-				firstName = "";
-			
-			// start the dialog
-			Intent intent = new Intent(this, DialogWithInputBox.class);
-			intent.putExtra(DialogWithInputBox.HINT_BUNDLE, "Your Name");
-			intent.putExtra(DialogWithInputBox.DEFAULT_TEXT, firstName);
-			intent.putExtra(DialogWithInputBox.TITLE_BUNDLE, "What's your Name?");
-			startActivityForResult(intent, ACTIVITY_CALLS.ASK_USER_NAME.ordinal());
-			return true;
-		}else
-			return false;
+		// grab references to graphics
+		picturesList = (com.tools.images.CustomGallery) findViewById(R.id.pictures_list);
+		picturesList.setImageViewTouchId(R.id.picture);
+		backgroundImage = (ImageView) findViewById(R.id.backgroundImage);
+		
+		// determine size of screen
+		Display display = getWindowManager().getDefaultDisplay();
+		pictureWindowWidth = display.getWidth();
+		pictureWindowHeight = display.getHeight() - verticalPadding;
+		
+		// grab cursor for all the groups
+		getPictures(false);
+	}
+
+	@Override
+	public void onPause(){
+		// pause threads
+		if (adapter != null)
+			adapter.imageLoader.stopThreads();
+		super.onPause();
+	}
+
+	@Override
+	public void onResume(){
+		
+		// restart thread
+		if (adapter != null)
+			adapter.imageLoader.restartThreads();
+		super.onResume();
 	}
 	
 	@Override
@@ -157,7 +167,177 @@ extends CustomActivity {
 			if (intent != null)
 				startActivityForResult(intent, ACTIVITY_CALLS.EDIT_PICTURE.ordinal());
 			break;
+		
+		// we chose a picture
+		case PICTURE_REQUEST:
+			// make the intent with all the data required to load the picture
+			Intent intent2 = ImageCapture.createIntentWithCorrectExtrasAfterSelection(ctx, AddCaptionsToImage.class, resultCode, data);
+			if (intent2 != null)
+				startActivityForResult(intent2, ACTIVITY_CALLS.EDIT_PICTURE.ordinal());
+			break;
 		}
+	}
+	
+	@Override
+	public void onAsyncExecute(int requestCode, AsyncTypeCall asyncTypeCall,
+			Object data) {
+		TASK_CALLS call = TASK_CALLS.convert(requestCode);
+		
+		// different types of calls
+		switch(call){
+		
+		case SAVE_USER_ON_INITIAL:
+			switch (asyncTypeCall){
+			case POST:
+				if (!((Boolean) data))
+						finish();
+				break;
+			}
+			break;
+		}
+	}
+	
+	/**
+	 * Find the cursor required for pictures
+	 * @param refresh if true, then clear out old data and start fresh, else just append
+	 */
+	private void getPictures(final boolean refresh){
+		// keep track if we are querying
+		currentlyQuerying = true;
+		if (refresh)
+			currentAmountOfQueries = 0;
+		
+		// run the query
+		CatPicture.queryCats(currentAmountOfQueries, QUERY_BATCH, new FindCallback() {
+			
+			@Override
+			public void done(List<ParseObject> data, ParseException e) {
+				// not querying anymore
+				currentlyQuerying = false;
+				
+				// we got back data, either initialize the list, or add it to it.
+				if (e == null){
+					if (refresh)
+						catsList = null;
+					if (catsList == null)
+						catsList = CatPicture.convertList(data);
+					else{
+						if (data.size() == 0)
+							return;
+						catsList.addAll(CatPicture.convertList(data));
+					}
+					
+					// keep track of how many posts we have loaded
+					currentAmountOfQueries = catsList.size();
+					
+					// fill the adapter
+					fillPictures(refresh);
+				}else{
+					Log.e(Utils.APP_TAG, e.getMessage());
+				}
+			}
+		});
+	}
+	
+	/**
+	 * fill list with the pictures
+	 * @param refresh true to jump back to the first item, false otherwise
+	 */
+	private void fillPictures(boolean refresh) {
+		
+		// save index and top position
+		int index = picturesList.getSelectedItemPosition();
+		
+		// set adapter
+		MemoryCache<String> cache = null;
+		if (adapter != null){
+			adapter.imageLoader.stopThreads();
+			cache = adapter.imageLoader.getMemoryCache();
+		}
+		adapter = new PicturesAdapter(this, catsList, pictureWindowWidth, pictureWindowHeight);
+		adapter.setImageSwitcher(imageSwitcher);
+		if (cache != null)
+			adapter.imageLoader.restoreMemoryCache(cache);
+		picturesList.setAdapter(adapter);
+		
+		// restore
+		if (refresh || index >= catsList.size())
+			picturesList.setSelection(0, true);
+		else
+			picturesList.setSelection(index, false);
+		
+		// null the background
+		backgroundImage.setImageDrawable(null);
+	}
+	
+	/**
+	 * On first time use, we need to ask the user their name
+	 * @return true if we asked the user, false otherwise.
+	 */
+	private boolean askUserName(){
+		// first time use, we need to ask the user their name
+		if (Prefs.getNumberTimesOpened(ctx) == 0){
+			
+			// find the user's name off phone
+			ThreeObjects<TwoStrings, HashSet<String>, HashSet<String>> self = 
+					com.tools.CustomCursors.findSelfInAddressBook(this);
+			String firstName = null;
+			if (self != null && self.mObject1 != null)
+				firstName = self.mObject1.mObject1;
+			if (firstName == null)
+				firstName = "";
+			
+			// start the dialog
+			Intent intent = new Intent(this, DialogWithInputBox.class);
+			intent.putExtra(DialogWithInputBox.HINT_BUNDLE, "Your Name");
+			intent.putExtra(DialogWithInputBox.DEFAULT_TEXT, firstName);
+			intent.putExtra(DialogWithInputBox.TITLE_BUNDLE, "What's your Name?");
+			startActivityForResult(intent, ACTIVITY_CALLS.ASK_USER_NAME.ordinal());
+			return true;
+		}else
+			return false;
+	}
+	
+	/**
+	 * This is called every time the adapter switches views, so we ecan pre-fetch the next images
+	 */
+	private ImageSwitcher imageSwitcher = new ImageSwitcher() {
+		
+		@Override
+		public void onImageSwitch(final int position) {
+			// did we change positions?
+			if (position == currentPosition)
+				return;
+			
+			// save the positions
+			currentPosition = position;
+			
+			// fetch the next picture, so it's ready
+			new Thread(new Runnable() {
+				public void run() {
+					for (int i = 1; i <= GRAB_NEXT_N_PICTURES && catsList.size() > position+i; i++){
+						if (!grabbedPictures.contains(position+i)){
+							grabbedPictures.add(position+i);
+							catsList.get(position+i).fetchPictureFromServer(ctx);
+						}
+					}
+				}
+			}).start();
+			
+			
+			// if we are getting close to the end, we need to requery.
+			if (currentPosition + LIMIT_TO_REQUERY >= currentAmountOfQueries && !currentlyQuerying)
+				getPictures(false);
+			
+		}
+	};
+
+	/**
+	 * Choose a picture clicked
+	 */
+	public void choosePictureClicked(View view){
+		Intent intent = ImageCapture.createImageSelectionIntent();
+		startActivityForResult(intent, ACTIVITY_CALLS.PICTURE_REQUEST.ordinal());
 	}
 	
 	/**
@@ -215,197 +395,13 @@ extends CustomActivity {
 			task.execute();
 		}
 	}
-	
-	private void testCreateCats(){
-		// get the folder
-		File externalStorage = Environment.getExternalStorageDirectory();
-		File folder = new File(externalStorage.getAbsolutePath() + "/Share Bear/Cats_2012-03-30 22_05_52/thumbnails/");
-		
-		// get list of files
-		File[] files = folder.listFiles();
-		
-		// create cats from these files
-		for (int i = 0; i < Math.min(files.length, 10); i++) 
-		{
 
-			if (files[i].isFile()) 
-			{
-				String name = files[i].getName();
-				if (name.endsWith(".jpg"))
-				{
-					// read the data
-					Bitmap bmp = BitmapFactory.decodeFile(files[i].getAbsolutePath());
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();  
-					bmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-					byte[] data = baos.toByteArray();
-					CatPicture cat = new CatPicture(
-							data,
-							data,
-							"title "+(i+1),
-							new ArrayList<String>(),
-							Prefs.getName(ctx),
-							Utils.getCurrentUser());
-					try {
-						cat.save();
-					} catch (ParseException e) {
-						// TODO Auto-generated catch block
-						Log.e("TAG", Log.getStackTraceString(e));
-					}
-
-				}
-			}
-		}
-	}
-	
-	@Override
-	protected void initializeLayout() {
-		
-		final boolean customTitleSupported = requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
-	    
-		// set the layout
-		setContentView(R.layout.pictures_thread);
-		
-		if ( customTitleSupported ) {
-	        getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.title_layout);
-	    }
-
-		// grab references to graphics
-		picturesList = (com.tools.images.CustomGallery) findViewById(R.id.pictures_list);
-		picturesList.setImageViewTouchId(R.id.picture);
-		
-		// determine size of screen
-		Display display = getWindowManager().getDefaultDisplay();
-		pictureWindowWidth = display.getWidth();
-		pictureWindowHeight = display.getHeight() - verticalPadding;
-		
-		// grab cursor for all the groups
-		getPictures(false);
-	}
-
-	@Override
-	public void onPause(){
-		// pause threads
-		if (adapter != null)
-			adapter.imageLoader.stopThreads();
-		super.onPause();
-	}
-
-	@Override
-	public void onResume(){
-		
-		// restart thread
-		if (adapter != null)
-			adapter.imageLoader.restartThreads();
-		super.onResume();
-	}
-	
 	/**
 	 * Refresh the list of pictures and jump to the first picture
 	 */
 	private void refresh(){
 		currentAmountOfQueries = 0;
 		getPictures(true);
-	}
-
-	/**
-	 * fill list with the pictures
-	 * @param refresh true to jump back to the first item, false otherwise
-	 */
-	private void fillPictures(boolean refresh) {
-		
-		// save index and top position
-		int index = picturesList.getSelectedItemPosition();
-		
-		// set adapter
-		MemoryCache<String> cache = null;
-		if (adapter != null){
-			adapter.imageLoader.stopThreads();
-			cache = adapter.imageLoader.getMemoryCache();
-		}
-		adapter = new PicturesAdapter(this, catsList, pictureWindowWidth, pictureWindowHeight);
-		adapter.setImageSwitcher(imageSwitcher);
-		if (cache != null)
-			adapter.imageLoader.restoreMemoryCache(cache);
-		picturesList.setAdapter(adapter);
-		
-		// restore
-		if (refresh || index >= catsList.size())
-			picturesList.setSelection(0, true);
-		else
-			picturesList.setSelection(index, false);
-	}
-	
-	private ImageSwitcher imageSwitcher = new ImageSwitcher() {
-		
-		@Override
-		public void onImageSwitch(final int position) {
-			// did we change positions?
-			if (position == currentPosition)
-				return;
-			
-			// save the positions
-			currentPosition = position;
-			
-			// fetch the next picture, so it's ready
-			new Thread(new Runnable() {
-				public void run() {
-					for (int i = 1; i <= GRAB_NEXT_N_PICTURES && catsList.size() > position+i; i++){
-						if (!grabbedPictures.contains(position+i)){
-							grabbedPictures.add(position+i);
-							catsList.get(position+i).fetchPictureFromServer(ctx);
-						}
-					}
-				}
-			}).start();
-			
-			
-			// if we are getting close to the end, we need to requery.
-			if (currentPosition + LIMIT_TO_REQUERY >= currentAmountOfQueries && !currentlyQuerying)
-				getPictures(false);
-			
-		}
-	};
-
-	/**
-	 * Find the cursor required for pictures
-	 * @param refresh if true, then clear out old data and start fresh, else just append
-	 */
-	private void getPictures(final boolean refresh){
-		// keep track if we are querying
-		currentlyQuerying = true;
-		if (refresh)
-			currentAmountOfQueries = 0;
-		
-		// run the query
-		CatPicture.queryCats(currentAmountOfQueries, QUERY_BATCH, new FindCallback() {
-			
-			@Override
-			public void done(List<ParseObject> data, ParseException e) {
-				// not querying anymore
-				currentlyQuerying = false;
-				
-				// we got back data, either initialize the list, or add it to it.
-				if (e == null){
-					if (refresh)
-						catsList = null;
-					if (catsList == null)
-						catsList = CatPicture.convertList(data);
-					else{
-						if (data.size() == 0)
-							return;
-						catsList.addAll(CatPicture.convertList(data));
-					}
-					
-					// keep track of how many posts we have loaded
-					currentAmountOfQueries = catsList.size();
-					
-					// fill the adapter
-					fillPictures(refresh);
-				}else{
-					Log.e(Utils.APP_TAG, e.getMessage());
-				}
-			}
-		});
 	}
 	
 	public void voteClicked(View view){
@@ -420,25 +416,6 @@ extends CustomActivity {
 		}catch(NumberFormatException  e){}
 		oldRating++;
 		rating.setText(String.valueOf(oldRating));
-	}
-	
-	@Override
-	public void onAsyncExecute(int requestCode, AsyncTypeCall asyncTypeCall,
-			Object data) {
-		TASK_CALLS call = TASK_CALLS.convert(requestCode);
-		
-		// different types of calls
-		switch(call){
-		
-		case SAVE_USER_ON_INITIAL:
-			switch (asyncTypeCall){
-			case POST:
-				if (!((Boolean) data))
-						finish();
-				break;
-			}
-			break;
-		}
 	}
 
 	@Override

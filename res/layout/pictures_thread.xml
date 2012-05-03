@@ -3,6 +3,14 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical">
+<ImageView
+    android:id="@+id/backgroundImage"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:adjustViewBounds="true"
+    android:scaleType="centerInside"
+    android:src="@drawable/wait_cat"
+/>
 <ProgressBar 
 	android:id="@+id/progressBar"
 	android:layout_width="45dp"
@@ -18,13 +26,26 @@
 />
 <ImageView
 	android:id="@+id/takePictureButton"
-	android:layout_width="64dp"
-	android:layout_height="64dp"
+	android:layout_width="32dp"
+	android:layout_height="32dp"
 	android:scaleType="fitCenter"
 	android:clickable="true"
 	android:src="@drawable/cam_icon_xml"
 	android:onClick="takePictureClicked"
 	android:layout_gravity="top|right"
 	android:background="@null"
+	android:layout_margin="2dp"
+/>
+<ImageView
+    android:id="@+id/choosePictureButton"
+	android:layout_width="32dp"
+	android:layout_height="32dp"
+	android:scaleType="fitCenter"
+	android:clickable="true"
+	android:src="@drawable/folder_icon_xml"
+	android:layout_gravity="top|left"
+	android:background="@null"
+    android:onClick="choosePictureClicked" 
+    android:layout_margin="2dp"
 />
 </FrameLayout>

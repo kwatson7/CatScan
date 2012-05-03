@@ -171,7 +171,7 @@ public class ParseFileHelper {
 			}
 			return;
 		}catch(Exception e){
-			Log.i("TAG", e.getMessage());
+			Log.i("TAG", Log.getStackTraceString(e));
 			return;
 		}finally{
 			isFetching = false;

@@ -73,7 +73,7 @@
         android:layout_height="wrap_content"
         android:layout_width="0px"
         android:layout_weight="1"
-        android:text="Make Your Own Captions"
+        android:text="Improve this Caption"
         android:layout_gravity="center_vertical"
         android:duplicateParentState="false"
         android:onClick="makeYourOwnCaptions"
