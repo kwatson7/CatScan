@@ -43,8 +43,8 @@ public class AddCaptionsToImage
 extends CustomActivity{
 
 	// constants
-    private static int[] DEFAULT_COLOR = {255, 255, 255};
-    private static int NULL_COLOR = Color.argb(0, 0, 0, 0);
+    private static final int[] DEFAULT_COLOR = {255, 255, 255};
+    private static final int NULL_COLOR = Color.argb(0, 0, 0, 0);
     
 	// member variables
 	private Bitmap photo; 							// The actual image data
