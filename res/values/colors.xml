@@ -5,5 +5,7 @@
     <color name="gray">#F555</color>
     <color name="gray75">#FCCC</color>
 	<color name="gray50">#F999</color>
+	<color name="turquoise_bright">#FF33CBCC</color>
+	<color name="turquoise_dark">#FF134C4D</color>
 
 </resources>

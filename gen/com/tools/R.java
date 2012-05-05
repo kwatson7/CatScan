@@ -5,7 +5,7 @@
  * should not be modified by hand.
  */
 
-package com.CatScan;
+package com.tools;
 
 public final class R {
     public static final class attr {

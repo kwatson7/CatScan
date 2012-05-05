@@ -20,7 +20,6 @@ public class ParseFileHelper {
 		new ArrayList<ParseFileHelper.ParseFileCallback>();
 	private WeakReference<byte[]> fileData = null;
 	private ParseException parseException = null;	
-	private boolean isFetching = false;
 	
 	// constants
 	private static final long TIMEOUT = 30000;  						// timeout to wait for finish
@@ -57,7 +56,6 @@ public class ParseFileHelper {
 			try {
 				synchronized (this) {
 					this.wait(TIMEOUT);
-					int kyle = 6;
 				}
 			} catch (InterruptedException e) {
 				Log.e(Utils.APP_TAG, Log.getStackTraceString(e));
@@ -146,8 +144,6 @@ public class ParseFileHelper {
 	 * @return
 	 */
 	private void getDataFromServer(){
-		// keep track if we are fetching
-		isFetching = true;
 		
 		// null the exception
 		parseException = null;
@@ -173,8 +169,6 @@ public class ParseFileHelper {
 		}catch(Exception e){
 			Log.i("TAG", Log.getStackTraceString(e));
 			return;
-		}finally{
-			isFetching = false;
 		}
 		
 		// we are done grabbing data, so store and notify
@@ -186,14 +180,6 @@ public class ParseFileHelper {
 		synchronized (this) {
 			this.notifyAll();
 		}
-	}
-	
-	/**
-	 * Are we currently in the process of fetching
-	 * @return
-	 */
-	public boolean isFetching(){
-		return isFetching;
 	}
 	
 	/**

@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -16,8 +15,6 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnLongClickListener;
-import android.view.ViewManager;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnTouchListener;
@@ -27,8 +24,6 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,13 +38,14 @@ public class AddCaptionsToImage
 extends CustomActivity{
 
 	// constants
-    private static int[] DEFAULT_COLOR = {255, 255, 255};
-    private static int NULL_COLOR = Color.argb(0, 0, 0, 0);
+    private static final int DEFAULT_COLOR = Color.rgb(255, 255, 255);
+    private static final int NULL_COLOR = Color.argb(0, 0, 0, 0);
     
 	// member variables
 	private Bitmap photo; 							// The actual image data
-	private int[] currentColor = DEFAULT_COLOR;
+	private int currentColor = DEFAULT_COLOR;
 	private ArrayList<String> captionsArray = new ArrayList<String>();
+	private boolean isPosting = false;
 
 	// pointers to graphics
 	private ImageView photoView; 					// The image showing
@@ -58,6 +54,8 @@ extends CustomActivity{
 	private ViewGroup screen;
 	private EditText captionEditor;
 	private ViewGroup EditorView; 
+	private ImageView trash;
+	private ViewGroup topEdit;
 	
 	// motion parameters
 	private View selected_item = null;
@@ -120,6 +118,8 @@ extends CustomActivity{
 		screen = (ViewGroup) findViewById(R.id.screen);
 		captionEditor = (EditText) findViewById(R.id.captionEditor);
 		EditorView = (ViewGroup) findViewById(R.id.EditorView);
+		trash = (ImageView) findViewById(R.id.trash);
+		topEdit = (ViewGroup) findViewById(R.id.topEdit);
 
 		// set the photo
 		photoView.setImageBitmap(photo);
@@ -150,17 +150,15 @@ extends CustomActivity{
 				@Override
 				public void colorChanged(int color, int red, int green, int blue) {
 					// store the color
-					currentColor[0] = red;
-					currentColor[1] = green;
-					currentColor[2] = blue;
+					currentColor = Color.rgb(red, green, blue);
 					
 					// launch makeCaption
 					makeCaption();
 				}
 			},
-			currentColor[0],
-			currentColor[1],
-			currentColor[2]);
+			Color.red(currentColor),
+			Color.green(currentColor),
+			Color.blue(currentColor));
 		
 		// show it
 		colorPickerDialog.show();
@@ -192,7 +190,7 @@ extends CustomActivity{
 		caption.setText(captionText.toUpperCase());
 		
 		// set the color
-		caption.setTextColor(Color.rgb(currentColor[0], currentColor[1], currentColor[2]));
+		caption.setTextColor(currentColor);
 		caption.setTypeface(Typeface.SANS_SERIF);
 		
 		// make it moveable
@@ -220,11 +218,15 @@ extends CustomActivity{
 	 * @param view
 	 */
 	public void postPicture(View view){
+		// don't allow double posts
+		if (isPosting)
+			return;
+		isPosting = true;
 		
 		// save the view to a bitmap
 		ArrayList<View> hiddenViews = new ArrayList<View>(2);
-		hiddenViews.add(title);
 		hiddenViews.add(EditorView);
+		hiddenViews.add(topEdit);
 		Bitmap picture = 
 			com.tools.Tools.saveViewToBitmap(
 				screen,
@@ -233,6 +235,7 @@ extends CustomActivity{
 				NULL_COLOR);
 		if (picture == null){
 			Toast.makeText(ctx, "Picture cold not be saved", Toast.LENGTH_LONG).show();
+			isPosting = false;
 			return;
 		}
 		
@@ -254,7 +257,6 @@ extends CustomActivity{
 		picture.compress(Bitmap.CompressFormat.JPEG, 100, stream2);
 		byte[] picArray = stream2.toByteArray();
 		
-
 		// create the cat post
 		CatPicture cat = new CatPicture(
 				picArray,
@@ -283,6 +285,7 @@ extends CustomActivity{
 		});
 
 		finish();
+		isPosting = false;
 	}
 
 	@Override
@@ -312,11 +315,13 @@ extends CustomActivity{
 
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
+				int touchX = (int)event.getX();
+				int touchY = (int)event.getY();
+				int x = touchX - offset_x;
+				int y = touchY - offset_y;
 				switch(event.getActionMasked())
 				{
 				case MotionEvent.ACTION_MOVE:
-					int x = (int)event.getX() - offset_x;
-					int y = (int)event.getY() - offset_y;
 					int w = getWindowManager().getDefaultDisplay().getWidth() - 100; // margin to keep from going off screen
 					int h = getWindowManager().getDefaultDisplay().getHeight() - 100; // margin to keep from going off screen
 					if(x > w)
@@ -330,6 +335,19 @@ extends CustomActivity{
 						selected_item.setLayoutParams(lp);
 						selected_item.invalidate();
 					}
+					
+					// highlight trashcan
+					setTrashIcon(touchX, touchY);	
+					break;
+				case MotionEvent.ACTION_UP:
+					if (isOverTrash(touchX, touchY) && selected_item != null)
+						((ViewGroup)selected_item.getParent()).removeView(selected_item);
+					selected_item = null;
+					trash.setImageResource(R.drawable.trashcan);
+					break;
+				case MotionEvent.ACTION_CANCEL:
+					selected_item = null;
+					trash.setImageResource(R.drawable.trashcan);
 					break;
 				default:
 					break;
@@ -337,6 +355,37 @@ extends CustomActivity{
 				return true;
 			}
 		});
+	}
+	
+	/**
+	 * Determine if we are hovered over the trash
+	 * @param x current x position in pixels
+	 * @param y current y position in pixels
+	 * @return true if over trash, and false otherwise
+	 */
+	private boolean isOverTrash(int x, int y){
+		int width = trash.getWidth();
+		int height = trash.getHeight();
+		int xPos = trash.getLeft();
+		int yPos = trash.getTop();
+		
+		if (x >= xPos && x <= xPos + width &&
+				y >= yPos && y <= yPos + height)
+			return true;
+		else
+			return false;
+	}
+	
+	/**
+	 * Set the proper trashcan icon depending on current locationi
+	 * @param x the current x location
+	 * @param y the current y location
+	 */
+	private void setTrashIcon(int x, int y){
+		if (isOverTrash(x, y))
+			trash.setImageResource(R.drawable.trashcan_hover);
+		else
+			trash.setImageResource(R.drawable.trashcan);
 	}
 	
 	/**
@@ -354,7 +403,7 @@ extends CustomActivity{
 					offset_x = (int)event.getX();
 					offset_y = (int)event.getY();
 					selected_item = v;
-					break;
+					break;				
 				default:
 					break;
 				}

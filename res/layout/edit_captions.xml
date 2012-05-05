@@ -26,6 +26,12 @@
 	android:layout_gravity="center"
 	android:background="@null"
 />
+<LinearLayout
+    android:id="@+id/topEdit"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="top|center_horizontal"
+    android:orientation="vertical">
 <EditText
     android:id="@+id/title"
     android:layout_width="fill_parent"
@@ -38,6 +44,16 @@
     android:imeOptions="actionDone"
     android:ellipsize="start" 
 />
+<ImageView 
+    android:src="@drawable/trashcan"
+    android:layout_width="70dp"
+    android:layout_height="40dp"
+    android:layout_gravity="left"
+    android:padding="0px"
+    android:scaleType="centerInside"
+    android:id="@+id/trash"
+/>
+</LinearLayout>
 
 <LinearLayout
     android:id="@+id/EditorView"
@@ -70,7 +86,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="makeCaptionClicked"
-            android:text="Make Caption" />
+            android:text="Place Caption" />
         <Button
             android:id="@+id/postPicture"
             android:layout_width="0px"
