@@ -423,4 +423,17 @@ extends CustomActivity{
 		});
 		*/
 	}
+	
+	private class Caption{
+		private View view;
+		private String text;
+		
+		public Caption(String text){
+			this.text = text;
+		}
+		
+		public void delete(){
+			((ViewGroup)view.getParent()).removeView(view);
+		}
+	}
 }
