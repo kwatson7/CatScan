@@ -47,6 +47,7 @@ public class CatPicture{
 	private ParseFile imageFile;
 	private ParseFile rawFile;	
 	private ParseFileHelper parseFileHelper = null;
+	private ParseFileHelper rawFileHelper = null;
 	
 	//enums for sort order
 	private enum SortOrder {
@@ -101,6 +102,7 @@ public class CatPicture{
 		
 		// initialize helper
 		parseFileHelper = new ParseFileHelper(this.parse, file);
+		rawFileHelper = new ParseFileHelper(this.parse, raw);
 	}
 	
 	/**
@@ -151,6 +153,7 @@ public class CatPicture{
 		
 		// initialize helper
 		parseFileHelper = new ParseFileHelper(this.parse, getImageFile());
+		rawFileHelper = new ParseFileHelper(this.parse, getRawFile());
 	}
 
 	/**
@@ -236,10 +239,6 @@ public class CatPicture{
 		if (path != null && path.length() != 0 && (new File(path)).exists())
 			return;
 		
-		// now see if we are already fetching using the parse helper
-		if (parseFileHelper.isFetching())
-			return;
-		
 		// if we made it here, then we should fetch the data
 		byte[] data = null;
 		try {
@@ -263,7 +262,7 @@ public class CatPicture{
 	 * 
 	 * @return the path of the raw picture file
 	 */
-	public String getRawPicturePath(Context ctx){
+	public String getRawPicturePathDONTUSE(Context ctx){
 		
 		// grab the file
 		ParseFile file = getRawFile();
@@ -298,6 +297,29 @@ public class CatPicture{
 		// write the data
 		return Utils.createExternalStoragePrivatePicture(ctx, getId() + "raw", data);
 	}
+	
+	/**
+	 * Grab the picture from the server. Write it to local storage if we can grab it
+	 * @param ctx required if we want to store the data locally. Pass null to skip this step
+	 * @return the path to the raw picture path or null if could not be written
+	 */
+	public String getRawPicturePath(Context ctx){
+		// use helper to manage multiple calls
+		if (rawFileHelper == null)
+			rawFileHelper = new ParseFileHelper(parse, getRawFile());
+		byte[] data = null;
+		try {
+			data = rawFileHelper.getData();
+		} catch (ParseException e) {
+			Log.e("TAG", Log.getStackTraceString(e));
+		}
+		if (data == null || data.length == 0)
+			return null;
+
+		// write the data
+		return Utils.createExternalStoragePrivatePicture(ctx, getId() + "raw", data);
+	}
+	
 
 	/**
 	 * Grab the picture from the server. Write it to local storage if we can grab it
