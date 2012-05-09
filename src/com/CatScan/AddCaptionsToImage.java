@@ -34,6 +34,7 @@ import com.CatScan.ServerObjects.CatPicture;
 import com.parse.ParseException;
 import com.parse.SaveCallback;
 import com.tools.ColorPickerDialog;
+import com.tools.ColorPickerDialog2;
 import com.tools.CustomActivity;
 import com.tools.ImageCapture;
 
@@ -149,8 +150,8 @@ extends CustomActivity{
 	private void changeColor(){
 		
 		// setup color picker
-		ColorPickerDialog colorPickerDialog =
-			new ColorPickerDialog(ctx, new ColorPickerDialog.OnColorChangedListener() {
+		ColorPickerDialog2 colorPickerDialog =
+			new ColorPickerDialog2(ctx, new ColorPickerDialog2.OnColorChangedListener() {
 
 				@Override
 				public void colorChanged(int color, int red, int green, int blue) {
