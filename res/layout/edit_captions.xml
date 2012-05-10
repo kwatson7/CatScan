@@ -46,8 +46,10 @@
 />
 <ImageView 
     android:src="@drawable/trashcan"
-    android:layout_width="70dp"
-    android:layout_height="40dp"
+    android:layout_width="140dp"
+    android:layout_height="80dp"
+    android:layout_marginLeft="-30dp"
+    android:visibility="invisible"
     android:layout_gravity="left"
     android:padding="0px"
     android:scaleType="centerInside"
@@ -86,14 +88,18 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="makeCaptionClicked"
-            android:text="Place Caption" />
+            android:text="Place Caption"
+            android:background="@drawable/rounded_corners"
+            android:layout_margin="2dp"/>
         <Button
             android:id="@+id/postPicture"
             android:layout_width="0px"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:onClick="postPicture"
-            android:text="Post Picture" />
+            android:onClick="postPictureClicked"
+            android:text="Post Picture"
+            android:background="@drawable/rounded_corners"
+            android:layout_margin="2dp"/>
     </LinearLayout>
 
 </LinearLayout>

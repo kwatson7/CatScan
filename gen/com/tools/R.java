@@ -12,9 +12,13 @@ public final class R {
     }
     public static final class color {
         public static final int black25=0x7f060000;
+        public static final int button_color1=0x7f060007;
+        public static final int button_color2=0x7f060006;
         public static final int gray=0x7f060001;
         public static final int gray50=0x7f060003;
         public static final int gray75=0x7f060002;
+        public static final int orange1=0x7f060008;
+        public static final int orange2=0x7f060009;
         public static final int turquoise_bright=0x7f060004;
         public static final int turquoise_dark=0x7f060005;
     }
@@ -36,17 +40,19 @@ public final class R {
         public static final int icon_catscan=0x7f02000e;
         public static final int missing_picture=0x7f02000f;
         public static final int orange_selector=0x7f020010;
-        public static final int stub=0x7f020011;
-        public static final int thumb_small=0x7f020012;
-        public static final int thumbs_up_gray=0x7f020013;
-        public static final int thumbs_up_normal=0x7f020014;
-        public static final int thumbs_up_selected=0x7f020015;
-        public static final int title=0x7f020016;
-        public static final int title_small=0x7f020017;
-        public static final int trashcan=0x7f020018;
-        public static final int trashcan_hover=0x7f020019;
-        public static final int turquoise_3d=0x7f02001a;
-        public static final int wait_cat=0x7f02001b;
+        public static final int rounded_corners=0x7f020011;
+        public static final int rounded_corners_turquoise=0x7f020012;
+        public static final int stub=0x7f020013;
+        public static final int thumb_small=0x7f020014;
+        public static final int thumbs_up_gray=0x7f020015;
+        public static final int thumbs_up_normal=0x7f020016;
+        public static final int thumbs_up_selected=0x7f020017;
+        public static final int title=0x7f020018;
+        public static final int title_small=0x7f020019;
+        public static final int trashcan=0x7f02001a;
+        public static final int trashcan_hover=0x7f02001b;
+        public static final int turquoise_3d=0x7f02001c;
+        public static final int wait_cat=0x7f02001d;
     }
     public static final class id {
         public static final int EditorView=0x7f070008;
@@ -84,6 +90,7 @@ public final class R {
     }
     public static final class string {
         public static final int app_name=0x7f040001;
+        public static final int captionAnotherHint=0x7f040004;
         public static final int captionHint=0x7f040003;
         public static final int hello=0x7f040000;
         public static final int titleHint=0x7f040002;
