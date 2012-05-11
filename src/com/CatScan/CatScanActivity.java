@@ -44,7 +44,7 @@ extends CustomActivity {
 	private int currentAmountOfQueries = 0;
 	private int currentPosition = 0; 				// The current position of the adapter
 	private boolean currentlyQuerying = false;
-	private HashSet<Integer> grabbedPictures = new HashSet<Integer>();
+	private HashSet<String> grabbedPictures = new HashSet<String>();
 	private ImageCapture imageCaptureHelper;
 	
 	// CONSTANTS
@@ -316,9 +316,11 @@ extends CustomActivity {
 			new Thread(new Runnable() {
 				public void run() {
 					for (int i = 1; i <= GRAB_NEXT_N_PICTURES && catsList.size() > position+i; i++){
-						if (!grabbedPictures.contains(position+i)){
-							grabbedPictures.add(position+i);
-							catsList.get(position+i).fetchPictureFromServer(ctx);
+						int nextPicture = position + 1;
+						String id = catsList.get(nextPicture).getId();
+						if (!grabbedPictures.contains(id)){
+							grabbedPictures.add(id);
+							catsList.get(nextPicture).fetchPictureFromServer(ctx);
 						}
 					}
 				}
@@ -404,6 +406,8 @@ extends CustomActivity {
 	private void refresh(){
 		currentAmountOfQueries = 0;
 		getPictures(true);
+		
+		Toast.makeText(ctx, "Refreshing...", Toast.LENGTH_SHORT).show();
 	}
 	
 	public void voteClicked(View view){

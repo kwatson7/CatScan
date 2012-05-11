@@ -103,7 +103,7 @@ extends CustomActivity{
 
 		// no photo
 		if (photo == null){
-			Toast.makeText(ctx, "Photo Problem", Toast.LENGTH_LONG).show();
+			Toast.makeText(ctx, "Photo Problem - Make sure you have an SD card", Toast.LENGTH_LONG).show();
 			finish();
 			return;
 		}
@@ -400,8 +400,21 @@ extends CustomActivity{
 			}
 		});
 
+		// show the toast
+		Toast.makeText(ctx, "Uploading picture...", Toast.LENGTH_SHORT).show();
+		
+		// show a message on the first time
+		com.tools.Tools.showOneTimeDialog(
+				ctx,
+				"tellWhenYourOwnPictureAppears",
+				getResources().getString(R.string.app_name),
+				"When your picture is done uploading, you can hit menu>refresh to see the newest pictures (yours included)",
+				null);
+		
 		finish();
 		isPosting = false;
+		
+		
 	}
 
 	@Override
