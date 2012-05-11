@@ -20,6 +20,8 @@ public class Utils {
 	public static final char pathsep = '/';
 	public static final String FOLDER_NAME = "Cat Scan Pictures";
 	public static final String CAMERA_DATA_KEY = "data";
+	public static final int IMAGE_QUALITY = 90;
+	public static final String APP_URL = "https://market.android.com/search?q=pname:com.CatScan";
 	
 	/**
 	 * Return the current User. If there is no user, then an anonymous one is created in the background.

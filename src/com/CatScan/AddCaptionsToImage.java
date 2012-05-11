@@ -55,6 +55,7 @@ extends CustomActivity{
 	private int currentColor = DEFAULT_COLOR; 								// the currently selected color	
 	private CaptionsList captionsList = new CaptionsList();	
 	private boolean isPosting = false;
+	private CatPicture sourcePicture = null;
 
 	// pointers to graphics
 	private ImageView photoView; 					// The image showing
@@ -71,6 +72,9 @@ extends CustomActivity{
 	private View selected_item = null;
 	private int offset_x = 0;
 	private int offset_y = 0;
+	
+	// public static variables used for passsing objects between activities, set to null once used
+	public static CatPicture sourcePictureStatic;
 
 	@Override
 	protected void onCreateOverride(Bundle savedInstanceState) {
@@ -86,7 +90,15 @@ extends CustomActivity{
 			if (data != null){
 				if (data.photo != null)
 					photo = data.photo;
+				if (data.sourcePicture != null)
+					sourcePicture = data.sourcePicture;
 			}
+		}
+		
+		// grab passed catPicture and set static to null
+		if (sourcePictureStatic != null){
+			sourcePicture = sourcePictureStatic;
+			sourcePictureStatic = null;
 		}
 
 		// no photo
@@ -351,10 +363,10 @@ extends CustomActivity{
 
 		// convert bitmap to byte[]
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		photo.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+		photo.compress(Bitmap.CompressFormat.JPEG, Utils.IMAGE_QUALITY, stream);
 		byte[] rawArray = stream.toByteArray();
 		ByteArrayOutputStream stream2 = new ByteArrayOutputStream();
-		picture.compress(Bitmap.CompressFormat.JPEG, 100, stream2);
+		picture.compress(Bitmap.CompressFormat.JPEG, Utils.IMAGE_QUALITY, stream2);
 		byte[] picArray = stream2.toByteArray();
 
 		// create the cat post
@@ -365,6 +377,10 @@ extends CustomActivity{
 				captionsList.getCaptions(),
 				Prefs.getName(ctx),
 				Utils.getCurrentUser());
+		
+		// if we have a passed in catPicture, use the passed cat pictures raw
+		if (sourcePicture != null)
+			cat.copyRawFile(sourcePicture);
 
 		// now save the cat picture
 		cat.saveInBackground(new SaveCallback() {
@@ -392,11 +408,13 @@ extends CustomActivity{
 	protected void additionalConfigurationStoring() {
 		ConfigurationPropertiesCustom data = new ConfigurationPropertiesCustom();
 		data.photo = photo;
+		data.sourcePicture = sourcePicture;
 		configurationProperties.customData = data;	
 	}
 
 	private class ConfigurationPropertiesCustom{
 		public Bitmap photo; 							// The actual image data
+		public CatPicture sourcePicture; 				// source cat picture 
 	}
 
 	@Override

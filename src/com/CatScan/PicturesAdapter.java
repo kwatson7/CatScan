@@ -3,6 +3,7 @@ package com.CatScan;
 import java.util.List;
 
 import com.CatScan.ServerObjects.CatPicture;
+import com.CatScan.ServerObjects.CatPicture.IsPostLikedCallback;
 import com.CatScan.ServerObjects.Vote;
 import com.CatScan.ServerObjects.Vote.VoteCallback;
 import com.tools.images.ImageLoader;
@@ -10,6 +11,8 @@ import com.tools.images.ImageViewTouch;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,7 +29,7 @@ extends BaseAdapter{
 	//member variables 
     private List<CatPicture> data; 										// the list of cat data
     private static LayoutInflater inflater = null;						// inflator used for views
-    public ImageLoader<String ,CatPicture, CatPicture> imageLoader;	// the imageloader used to load pictures
+    public ImageLoader<String ,CatPicture, CatPicture> imageLoader;		// the imageloader used to load pictures
     private int pictureWindowWidth; 									// The size of the picture (will be square)
     private int pictureWindowHeight;
 	private ImageSwitcher imageSwitcher = null;
@@ -66,7 +69,6 @@ extends BaseAdapter{
         			@Override
         			public Bitmap onFullSizeWeb(CatPicture fullSizeData,
         					int desiredWidth, int desiredHeight) {
-        				Log.d(Utils.APP_TAG, fullSizeData.getTitle());
         				return fullSizeData.getPicture(act, desiredWidth, desiredHeight);
         			}
 
@@ -77,7 +79,6 @@ extends BaseAdapter{
         			}
         		});
 		
-       // imageLoader = new ImageLoaderZoomView(android.R.color.transparent, pictureWindowWidth, pictureWindowWidth);
         this.pictureWindowWidth = pictureWindowWidth;
         this.pictureWindowHeight = pictureWindowHeight;
 	}
@@ -160,20 +161,18 @@ extends BaseAdapter{
         
         // set the correct picture if we like the post
         likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_gray));
-        Vote.getVote(Utils.getCurrentUser(), cat, new VoteCallback() {
+        cat.isPostLikedByCurrentUserBackground(new IsPostLikedCallback() {
 			
 			@Override
-			public void onDone(Vote vote) {
-				if (vote.getVote()){
-					likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_selected));
-					likeButton.invalidate();
-				}
-				else{
-					likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_normal));
-					likeButton.invalidate();
-				}
+			public void onDone(boolean isLiked) {
+				if (isLiked){
+	        		likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_selected));
+	        	}
+	        	else{
+	        		likeButton.setImageDrawable(act.getResources().getDrawable(R.drawable.thumbs_up_normal));
+	        	}
 			}
-		});       	
+		});
 
         // show the view
         imageLoader.DisplayImage(cat.getId(), cat, cat, image);

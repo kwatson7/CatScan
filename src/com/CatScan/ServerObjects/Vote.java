@@ -53,6 +53,19 @@ public class Vote{
 	}
 	
 	/**
+	 * Create a vote from representativce ParseObject and then override post and user with the included post and user <br>
+	 * This is usefull when querying for a vote, and we already have the user and post, so no need to include them in the query.
+	 * @param parse
+	 * @param user
+	 * @param post
+	 */
+	public Vote(ParseObject parse, CatUser user, CatPicture post){
+		this.parse = parse;
+		post.putCat(this.parse, POST);
+		user.putUser(this.parse, USER);
+	}
+	
+	/**
 	 * Convert a list of ParseObjects to Votes
 	 * @param parse
 	 * @return
@@ -138,8 +151,6 @@ public class Vote{
 		ParseQuery query = new ParseQuery(OBJECT_NAME);
 		query.whereEqualTo(POST, picture.getParseForQuery());
 		query.whereEqualTo(USER, user.getParseForQuery());
-		query.include(POST);
-		query.include(USER);
 		query.findInBackground(new FindCallback() {
 
 			@Override
@@ -147,10 +158,9 @@ public class Vote{
 				Vote vote = new Vote(picture, user, false);
 				if (e == null){
 					if (data.size() > 0){
-						vote = new Vote(data.get(0));
+						vote = new Vote(data.get(0), user, picture);
 					}
 				}else{
-					e.printStackTrace();
 					Log.e(Utils.APP_TAG, e.getMessage());
 				}
 				
@@ -158,6 +168,37 @@ public class Vote{
 				callback.onDone(vote);
 			}
 		});
+	}
+	
+	/**
+	 * This will grab the vote o that relates to the given user and cat picture post. <br>
+	 * This can be slow as it queries the server, so call on background thread
+	 * @param user The user in question
+	 * @param picture The picture in question
+	 */
+	public static Vote getVote(
+			final CatUser user,
+			final CatPicture picture){
+		
+		// query the database to get any votes that connect the user and picture
+		ParseQuery query = new ParseQuery(OBJECT_NAME);
+		query.whereEqualTo(POST, picture.getParseForQuery());
+		query.whereEqualTo(USER, user.getParseForQuery());
+		
+		// grab the data
+		List<ParseObject> data = null;
+		try {
+			data = query.find();
+		} catch (ParseException e) {
+			Log.e(Utils.APP_TAG, e.getMessage());
+			return new Vote(picture, user, false);
+		}
+		
+		// fill the vote object with the parse data
+		if (data.size() > 0)
+			return new Vote(data.get(0), user, picture);
+		else
+			return new Vote(picture, user, false);
 	}
 	
 	public static HashSet<String> getPostIdsUserLikes(

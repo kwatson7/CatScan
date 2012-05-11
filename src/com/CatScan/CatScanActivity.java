@@ -363,7 +363,8 @@ extends CustomActivity {
 		com.tools.Tools.sharePicture(
 				ctx,
 				Prefs.getName(ctx) + " shared a picture with you",
-				"Here is a cool Lol cat. You can view more and make your own! Just download CatScan on the android market",
+				"Here is a cool LOLcat. You can view more and make your own! Just download CatScan on the android market at this link: "+
+				Utils.APP_URL,
 				path,
 				"Choose a Method to Share");
 	}
@@ -375,6 +376,7 @@ extends CustomActivity {
 	public void makeYourOwnCaptions(View view){
 		// grab the path
 		String path = catsList.get(currentPosition).getPathToExternalStorageRaw(ctx);
+		AddCaptionsToImage.sourcePictureStatic = catsList.get(currentPosition);
 
 		// if we have a picture, then launch the activity, otherwise we need to create it
 		if (path != null){

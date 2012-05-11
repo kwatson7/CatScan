@@ -48,6 +48,7 @@ public class CatPicture{
 	private ParseFile rawFile;	
 	private ParseFileHelper parseFileHelper = null;
 	private ParseFileHelper rawFileHelper = null;
+	private Boolean isPostLikedByCurrentUser = null; 
 	
 	//enums for sort order
 	private enum SortOrder {
@@ -97,12 +98,108 @@ public class CatPicture{
 		// store the files, we will save them, when we save the picture
 		ParseFile file = new ParseFile(DEFAULT_FILE_NAME, picData);
 		ParseFile raw = new ParseFile(DEFAULT_FILE_NAME, rawPicture);
+		
+		// these need to be saved internally bacause they cannot be put into the parse object yet, because they are not saved
 		this.imageFile = file;
 		this.rawFile = raw;
 		
 		// initialize helper
 		parseFileHelper = new ParseFileHelper(this.parse, file);
 		rawFileHelper = new ParseFileHelper(this.parse, raw);
+	}
+	
+	/**
+	 * Create a CatPicture from a representative ParseObject
+	 * @param parse
+	 */
+	public CatPicture(ParseObject parse){
+		//TODO: check inputs for other server objects
+		if (!parse.getClassName().equals(OBJECT_NAME))
+			throw new IllegalArgumentException("Only " + OBJECT_NAME + " can be passed into CatPicture");
+		this.parse = parse;
+		
+		// initialize helper
+		parseFileHelper = new ParseFileHelper(this.parse, getImageFile());
+		rawFileHelper = new ParseFileHelper(this.parse, getRawFile());
+	}
+	
+	/**
+	 * Convert a list of ParseObjects to CatPictures
+	 * @param parse
+	 * @return
+	 */
+	public static List<CatPicture> convertList(List<ParseObject> parse){
+		List<CatPicture> out = new ArrayList<CatPicture>();
+		for (ParseObject item : parse)
+			out.add(new CatPicture(item));
+		return out;
+	}
+	
+	/**
+	 * Return whether the current user likes this post. <br>
+	 * This can be slow as it may query the server if we have not asked this before
+	 * @return
+	 */
+	public synchronized boolean isPostLikedByCurrentUser(){
+		if (isPostLikedByCurrentUser != null)
+			return isPostLikedByCurrentUser;
+		Vote vote = Vote.getVote(Utils.getCurrentUser(), this);
+		isPostLikedByCurrentUser = vote.getVote();
+		return isPostLikedByCurrentUser;
+	}
+	
+	/**
+	 * Determine if the post is liked by the user in the background.
+	 * @param isPostLikedCallback
+	 */
+	public synchronized void isPostLikedByCurrentUserBackground(final IsPostLikedCallback isPostLikedCallback){
+		// we have the data available
+		if (isPostLikedByCurrentUser != null){
+			isPostLikedCallback.onDone(isPostLikedByCurrentUser);
+			return;
+		}
+		
+		// we must grab the data
+		Vote.getVote(Utils.getCurrentUser(), this, new VoteCallback() {
+
+    		@Override
+    		public void onDone(Vote vote) {
+    			isPostLikedByCurrentUser = vote.getVote();
+    			isPostLikedCallback.onDone(vote.getVote());
+    		}
+    	});  
+	}
+	
+	public interface IsPostLikedCallback{
+		public void onDone(boolean isLiked);
+	}
+	
+	/**
+	 * Return if the current user likes this post only using info locally on machine. Will be null if unknown.
+	 * @see isPostLikedByCurrentUser to get info if null is returned
+	 * @return
+	 */
+	public Boolean isPostLikedByCurrentUserLocal(){
+		return isPostLikedByCurrentUser;
+	}
+	
+	/**
+	 * Set a raw image file for this cat picture. Usually this will be done when we have used another pictures raw image as this
+	 * pictures raw image as well. This way we do not have to duplicate the data when storing on server
+	 * @param raw
+	 */
+	public void setRawFileDONTUSE(ParseFile raw){
+		this.rawFile = raw;
+		rawFileHelper = new ParseFileHelper(this.parse, raw);
+	}
+	
+	/**
+	 * Copy the raw file pointer from the source cat picture into this one
+	 * @param source The source cat picture
+	 */
+	public void copyRawFile(CatPicture source){
+		this.rawFile = source.getRawFile();
+		rawFileHelper = new ParseFileHelper(this.parse, source.getRawFile());
 	}
 	
 	/**
@@ -139,33 +236,6 @@ public class CatPicture{
 			return false;
 		else
 			return true;
-	}
-
-	/**
-	 * Create a CatPicture from a representative ParseObject
-	 * @param parse
-	 */
-	public CatPicture(ParseObject parse){
-		//TODO: check inputs for other server objects
-		if (!parse.getClassName().equals(OBJECT_NAME))
-			throw new IllegalArgumentException("Only " + OBJECT_NAME + " can be passed into CatPicture");
-		this.parse = parse;
-		
-		// initialize helper
-		parseFileHelper = new ParseFileHelper(this.parse, getImageFile());
-		rawFileHelper = new ParseFileHelper(this.parse, getRawFile());
-	}
-
-	/**
-	 * Convert a list of ParseObjects to CatPictures
-	 * @param parse
-	 * @return
-	 */
-	public static List<CatPicture> convertList(List<ParseObject> parse){
-		List<CatPicture> out = new ArrayList<CatPicture>();
-		for (ParseObject item : parse)
-			out.add(new CatPicture(item));
-		return out;
 	}
 
 	/**
@@ -221,7 +291,7 @@ public class CatPicture{
 
 		// resize the data
 		if (desiredWidth != null && desiredHeight != null)
-			data = com.tools.Tools.resizeByteArray(data, new WidthHeight(desiredWidth, desiredHeight), "resizeSmall", null, 0f);
+			data = com.tools.Tools.resizeByteArray(data, new WidthHeight(desiredWidth, desiredHeight), "resizeSmall", null, 0f, 100);
 		return BitmapFactory.decodeByteArray(data, 0, data.length);
 	}
 	
@@ -426,12 +496,13 @@ public class CatPicture{
 
 	/**
 	 * Return the rating for this post. <br>
-	 * On a background thread we also validate that the rating is correct
+	 * On a background thread we also validate that the rating is correct. Currently we don't
 	 * @return
 	 */
 	public int getRating(){
 		// verify on the background that we have the right rating
-		validateRating();
+		//validateRating();
+		//TODO: determine if we need to validate rationg or not
 
 		// return the rating
 		return parse.getInt(RATING);
@@ -545,11 +616,11 @@ public class CatPicture{
 					else
 						parse.saveInBackground();
 				}else if (e != null && isSafeToSave){
-					Log.e(Utils.APP_TAG, "save to save returned true, but we have an exception, this shouldn't happend");
+					Log.e(Utils.APP_TAG, "safe to save returned true, but we have an exception, this shouldn't happend");
 					saveCallback.done(e);
 				}else if (e == null && !isSafeToSave){
-					Log.e(Utils.APP_TAG, "save to save returned false, but we had no exception, this shouldn't happend");
-					saveCallback.done(new ParseException(-100, "save to save returned false, but we had no exception, this shouldn't happend"));
+					Log.e(Utils.APP_TAG, "safe to save returned false, but we had no exception, this shouldn't happend");
+					saveCallback.done(new ParseException(-100, "safe to save returned false, but we had no exception, this shouldn't happend"));
 				}else{
 					saveCallback.done(e);
 				}
@@ -597,7 +668,14 @@ public class CatPicture{
 	 */
 	public void vote(final boolean decision){
 
-		Log.i(Utils.APP_TAG, "vote method called");
+		// if nothing has changed then just return
+		if (isPostLikedByCurrentUser != null &&
+				isPostLikedByCurrentUser == decision)
+				return;
+		
+		// save the current vote
+		isPostLikedByCurrentUser = decision;
+		
 		// get the current vote
 		Vote.getVote(Utils.getCurrentUser(), this, new VoteCallback() {
 
@@ -606,7 +684,6 @@ public class CatPicture{
 
 				// get the current value of the vote
 				boolean current = vote.getVote();
-				Log.i(Utils.APP_TAG, "old vote = "+current);
 
 				// only do something if it's changed
 				if (decision != current){
@@ -625,18 +702,15 @@ public class CatPicture{
 					return;
 
 				// save the vote and picture in the background
-				Log.i(Utils.APP_TAG, "vote starting save");
 				saveInBackground(new SaveCallback() {
 
 					@Override
 					public void done(ParseException arg0) {
-						Log.i(Utils.APP_TAG, "vote saved");
 						// no error, so save the vote
 						if (arg0 == null)
 							vote.saveInBackground(null);
 						else
 							Log.e(Utils.APP_TAG, arg0.getMessage());
-
 					}
 				});			
 			}
