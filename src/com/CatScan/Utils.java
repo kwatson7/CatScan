@@ -97,13 +97,15 @@ public class Utils {
 	public static byte[] getExternalStoragePrivatePicture(Context ctx, String name){
 		try{
 			File file = getExternalStoreFile(name);
+			if (!file.exists())
+				return null;
 			Bitmap bmp = BitmapFactory.decodeFile(file.getAbsolutePath());
 			ByteArrayOutputStream stream = new ByteArrayOutputStream();
 			bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream);
 			byte[] byteArray = stream.toByteArray();
 			return byteArray;
 		}catch(Exception e){
-			Log.d(Utils.APP_TAG, "file not read from external storage" + e.getMessage());
+			Log.d(Utils.APP_TAG, "file not read from external storage " + e.getMessage());
 			return null;
 		}
 	}

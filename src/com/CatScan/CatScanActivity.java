@@ -88,8 +88,7 @@ extends CustomActivity {
 		askUserName();
 		
 		// save user on first use
-		SaveUserOnInitial task = new SaveUserOnInitial(this, TASK_CALLS.SAVE_USER_ON_INITIAL.ordinal());
-		addTask(task);
+		SaveUserOnInitial<CatScanActivity> task = new SaveUserOnInitial<CatScanActivity>(this, TASK_CALLS.SAVE_USER_ON_INITIAL.ordinal());
 		task.execute();
 		
 		// set the layout
@@ -316,7 +315,7 @@ extends CustomActivity {
 			new Thread(new Runnable() {
 				public void run() {
 					for (int i = 1; i <= GRAB_NEXT_N_PICTURES && catsList.size() > position+i; i++){
-						int nextPicture = position + 1;
+						int nextPicture = position + i;
 						String id = catsList.get(nextPicture).getId();
 						if (!grabbedPictures.contains(id)){
 							grabbedPictures.add(id);
@@ -391,11 +390,11 @@ extends CustomActivity {
 		}else{
 			
 			// do a task to do it
-			LaunchAddOurOwnCaptionsTask task = new LaunchAddOurOwnCaptionsTask(
+			LaunchAddOurOwnCaptionsTask<CatScanActivity> task = 
+				new LaunchAddOurOwnCaptionsTask<CatScanActivity>(
 					this,
 					TASK_CALLS.LAUNCH_ADD_OWN_CAPTIONS.ordinal(),
 					catsList.get(currentPosition));
-			addTask(task);
 			task.execute();
 		}
 	}

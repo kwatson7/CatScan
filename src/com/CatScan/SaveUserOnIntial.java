@@ -1,17 +1,16 @@
 package com.CatScan;
 
 import android.app.ProgressDialog;
-import android.util.Log;
 import android.widget.Toast;
 
-import com.parse.ParseException;
 import com.tools.CustomActivity;
 import com.tools.CustomAsyncTask;
 
-class SaveUserOnInitial extends CustomAsyncTask<Void, Void, String>{
+class SaveUserOnInitial <ACTIVITY_TYPE extends CustomActivity>
+	extends CustomAsyncTask<ACTIVITY_TYPE, Void, String>{
 
 	public SaveUserOnInitial(
-			CustomActivity act,
+			ACTIVITY_TYPE act,
 			int requestId) {
 		super(act,
 				requestId,

@@ -1,8 +1,8 @@
 package com.CatScan.ServerObjects;
 
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Date;
 
 import android.util.Log;
 
@@ -20,9 +20,10 @@ public class ParseFileHelper {
 		new ArrayList<ParseFileHelper.ParseFileCallback>();
 	private WeakReference<byte[]> fileData = null;
 	private ParseException parseException = null;	
+	private Date date = null;
 	
 	// constants
-	private static final long TIMEOUT = 30000;  						// timeout to wait for finish
+	private static final long TIMEOUT = 10000;  						// timeout to wait for finish
 	
 	/**
 	 * Use this helper to grab data from a parse file. It handles multiple queries to the file without erroring out
@@ -46,6 +47,9 @@ public class ParseFileHelper {
 	 */
 	public byte[] getData()
 	throws ParseException{
+		String str = com.tools.Tools.randomString(5);
+		Log.i(Utils.APP_TAG, parsefile.getName() + " " + str + " getData called");
+		
 		// launch the call
 		if (fileData == null || fileData.get() == null || fileData.get().length == 0)
 			getDataFromServer();
@@ -55,7 +59,17 @@ public class ParseFileHelper {
 				parseException == null){
 			try {
 				synchronized (this) {
+					
+					Log.i(Utils.APP_TAG, parsefile.getName() +" "+ str+ " wait ");
+					Date date = new Date();
 					this.wait(TIMEOUT);
+					Log.i(Utils.APP_TAG, parsefile.getName() +" "+ str+ " wait finished");
+					if ((new Date()).getTime() - date.getTime() > TIMEOUT && ((fileData == null || fileData.get() == null || fileData.get().length == 0) &&
+							parseException == null)){
+						Log.i(Utils.APP_TAG, parsefile.getName() +" "+ str+ " from server re-called");
+						parsefile.cancel();
+						getDataFromServer();
+					}
 				}
 			} catch (InterruptedException e) {
 				Log.e(Utils.APP_TAG, Log.getStackTraceString(e));
@@ -86,9 +100,17 @@ public class ParseFileHelper {
 	 */
 	public byte[] getDataNoWait()
 	throws ParseException{
+		String str = com.tools.Tools.randomString(5);
+		Log.i(Utils.APP_TAG, parsefile.getName() + " " + str + " getDataNoWait called");
+		
 		// launch the call
 		if (fileData == null || fileData.get() == null || fileData.get().length == 0)
 			getDataFromServer();
+		
+		int l = 0;
+		if (fileData != null && fileData.get() != null)
+			l = fileData.get().length;
+		Log.i(Utils.APP_TAG, parsefile.getName() + " " + str + " getDataNoWaitServer finished with length = " + l);
 		
 		// we have an exception
 		if (parseException != null){
@@ -153,7 +175,7 @@ public class ParseFileHelper {
 		
 		try{
 			// fetch data 
-			fileHolder.fetchIfNeeded();
+		//	fileHolder.fetchIfNeeded();
 		
 			// grab the data from the file
 			data = parsefile.getData();
@@ -166,8 +188,22 @@ public class ParseFileHelper {
 				this.notifyAll();
 			}
 			return;
+		}catch(java.lang.ArrayIndexOutOfBoundsException e){
+			Log.d(Utils.APP_TAG, Log.getStackTraceString(e));
+			getDataFromServer();
+			return;
 		}catch(Exception e){
-			Log.i("TAG", Log.getStackTraceString(e));
+			Log.d(Utils.APP_TAG, Log.getStackTraceString(e));
+			if (date == null){
+				date = new Date();
+			}else{
+				Date newDate = new Date();
+				if(newDate.getTime() - date.getTime() > TIMEOUT){
+					parsefile.cancel();
+					date = newDate;
+					getDataFromServer();
+				}
+			}
 			return;
 		}
 		

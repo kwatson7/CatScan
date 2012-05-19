@@ -4,16 +4,11 @@ import java.util.List;
 
 import com.CatScan.ServerObjects.CatPicture;
 import com.CatScan.ServerObjects.CatPicture.IsPostLikedCallback;
-import com.CatScan.ServerObjects.Vote;
-import com.CatScan.ServerObjects.Vote.VoteCallback;
 import com.tools.images.ImageLoader;
 import com.tools.images.ImageViewTouch;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;

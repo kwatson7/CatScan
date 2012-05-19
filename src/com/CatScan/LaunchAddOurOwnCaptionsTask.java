@@ -8,12 +8,12 @@ import com.tools.CustomActivity;
 import com.tools.CustomAsyncTask;
 import com.tools.ImageCapture;
 
-public class LaunchAddOurOwnCaptionsTask
-extends CustomAsyncTask<Void, Void, String>{
+public class LaunchAddOurOwnCaptionsTask <ACTIVITY_TYPE extends CustomActivity>
+extends CustomAsyncTask<ACTIVITY_TYPE, Void, String>{
 
 	private CatPicture cat;
 	public LaunchAddOurOwnCaptionsTask(
-			CustomActivity act,
+			ACTIVITY_TYPE act,
 			int requestId,
 			CatPicture cat) {
 		super(

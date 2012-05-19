@@ -26,7 +26,6 @@ import android.view.WindowManager;
 import android.view.View.OnTouchListener;
 import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
-import android.view.inputmethod.InputMethodManager;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
@@ -226,7 +225,6 @@ extends CustomActivity{
 	private void makeCaption(){
 
 		// show a dialog showing how to use the caption editor
-		String newline = System.getProperty("line.separator");
 		com.tools.Tools.showOneTimeDialog(ctx,
 				"showHelpForCaptions",
 				getResources().getString(R.string.app_name),
