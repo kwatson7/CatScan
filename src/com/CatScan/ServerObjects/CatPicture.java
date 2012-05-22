@@ -49,7 +49,7 @@ public class CatPicture{
 	private Boolean isPostLikedByCurrentUser = null; 
 	
 	//enums for sort order
-	private enum SortOrder {
+	public enum SortOrder {
 		NEWEST, RATING, COMBO_ALGORITHM;
 	}
 	private static SortOrder sortOrder = SortOrder.NEWEST;
@@ -720,7 +720,16 @@ public class CatPicture{
 	 * @param query
 	 */
 	private static void setQueryOrder(ParseQuery query){
-		query.orderByDescending("createdAt");
+		String order = "createdAt";
+		switch (sortOrder){
+		case NEWEST:
+			order = "createdAt";
+			break;
+		case RATING:
+			order = RATING;
+			break;
+		}
+		query.orderByDescending(order);
 	}
 
 	/**

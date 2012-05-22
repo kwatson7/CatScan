@@ -73,7 +73,7 @@ extends CustomActivity {
 	
 	// menu items
 	private enum MENU_ITEMS {
-		REFRESH;
+		REFRESH_NEWEST, REFRESH_RATING;
 		private static MENU_ITEMS convert(int value)
 		{
 			return MENU_ITEMS.class.getEnumConstants()[value];
@@ -91,8 +91,14 @@ extends CustomActivity {
 		SaveUserOnInitial<CatScanActivity> task = new SaveUserOnInitial<CatScanActivity>(this, TASK_CALLS.SAVE_USER_ON_INITIAL.ordinal());
 		task.execute();
 		
+		// set sort order
+		CatPicture.setSortOrder(CatPicture.SortOrder.NEWEST);
+		
 		// set the layout
 		initializeLayout();	
+		
+		// show rating selector
+		com.tools.AppRater.app_launched(ctx, getResources().getString(R.string.app_name), getPackageName());
 	}
 	
 	@Override
@@ -314,6 +320,7 @@ extends CustomActivity {
 			// fetch the next picture, so it's ready
 			new Thread(new Runnable() {
 				public void run() {
+					android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_LESS_FAVORABLE);
 					for (int i = 1; i <= GRAB_NEXT_N_PICTURES && catsList.size() > position+i; i++){
 						int nextPicture = position + i;
 						String id = catsList.get(nextPicture).getId();
@@ -438,10 +445,12 @@ extends CustomActivity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
-		MenuItem refresh = menu.add(0,MENU_ITEMS.REFRESH.ordinal(), 0, "Refresh");
+		MenuItem newest = menu.add(0,MENU_ITEMS.REFRESH_NEWEST.ordinal(), 0, "Refresh by Newest");
+		MenuItem rating = menu.add(0, MENU_ITEMS.REFRESH_RATING.ordinal(), 0, "Refresh by Rating");
 
 		// add icons
-		refresh.setIcon(R.drawable.ic_menu_refresh);
+		newest.setIcon(R.drawable.ic_menu_refresh);
+		rating.setIcon(R.drawable.ic_menu_refresh);
 		
 		return true;
 	}
@@ -458,7 +467,12 @@ extends CustomActivity {
 		MENU_ITEMS call = MENU_ITEMS.convert(item.getItemId());
 		// decide on what each button should od
 		switch(call) {
-		case REFRESH:
+		case REFRESH_NEWEST:
+			CatPicture.setSortOrder(CatPicture.SortOrder.NEWEST);
+			refresh();
+			return true;
+		case REFRESH_RATING:
+			CatPicture.setSortOrder(CatPicture.SortOrder.RATING);
 			refresh();
 			return true;
 		}
