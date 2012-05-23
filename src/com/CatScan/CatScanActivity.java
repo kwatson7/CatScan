@@ -46,6 +46,7 @@ extends CustomActivity {
 	private boolean currentlyQuerying = false;
 	private HashSet<String> grabbedPictures = new HashSet<String>();
 	private ImageCapture imageCaptureHelper;
+	private boolean endOfList = false;
 	
 	// CONSTANTS
 	private static final int QUERY_BATCH = 10;
@@ -233,6 +234,10 @@ extends CustomActivity {
 					}
 					
 					// keep track of how many posts we have loaded
+					if (currentAmountOfQueries  == catsList.size())
+						endOfList = true;
+					else
+						endOfList = false;
 					currentAmountOfQueries = catsList.size();
 					
 					// fill the adapter
@@ -332,6 +337,13 @@ extends CustomActivity {
 				}
 			}).start();
 			
+			// if we are at the end of the list, then tell the user
+			if (position == currentAmountOfQueries){
+				if (endOfList)
+					Toast.makeText(ctx, "No More Pictures", Toast.LENGTH_SHORT).show();
+				else
+					Toast.makeText(ctx, "Fetching more pictures", Toast.LENGTH_SHORT).show();
+			}
 			
 			// if we are getting close to the end, we need to requery.
 			if (currentPosition + LIMIT_TO_REQUERY >= currentAmountOfQueries && !currentlyQuerying)
