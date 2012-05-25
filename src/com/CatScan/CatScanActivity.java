@@ -6,6 +6,8 @@ import java.util.List;
 
 import com.CatScan.PicturesAdapter.ImageSwitcher;
 import com.CatScan.ServerObjects.CatPicture;
+import com.CatScan.ServerObjects.Vote;
+import com.CatScan.ServerObjects.Vote.CountPostsLiked;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
@@ -17,6 +19,8 @@ import com.tools.TwoStrings;
 import com.tools.images.MemoryCache;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -47,6 +51,7 @@ extends CustomActivity {
 	private HashSet<String> grabbedPictures = new HashSet<String>();
 	private ImageCapture imageCaptureHelper;
 	private boolean endOfList = false;
+	private CustomActivity act = this;
 	
 	// CONSTANTS
 	private static final int QUERY_BATCH = 10;
@@ -89,8 +94,11 @@ extends CustomActivity {
 		askUserName();
 		
 		// save user on first use
-		SaveUserOnInitial<CatScanActivity> task = new SaveUserOnInitial<CatScanActivity>(this, TASK_CALLS.SAVE_USER_ON_INITIAL.ordinal());
-		task.execute();
+		if (!Prefs.isUserSaved(ctx)){
+			SaveUserOnInitial<CatScanActivity> task = new SaveUserOnInitial<CatScanActivity>(this, TASK_CALLS.SAVE_USER_ON_INITIAL.ordinal());
+			task.execute();
+		}else
+			Prefs.incrementNumberTimesUsed(ctx);
 		
 		// set sort order
 		CatPicture.setSortOrder(CatPicture.SortOrder.NEWEST);
@@ -100,6 +108,34 @@ extends CustomActivity {
 		
 		// show rating selector
 		com.tools.AppRater.app_launched(ctx, getResources().getString(R.string.app_name), getPackageName());
+		
+		// count how many votes the current user has received
+		if (Prefs.isUserSaved(ctx)){
+			Vote.queryVotesRecievedInBackground(Utils.getCurrentUser(), new CountPostsLiked() {
+
+				@Override
+				public void onCount(int count) {
+					// show a dialog
+					if (count > 0 && !act.isFinishing()){
+						DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+								switch (which){
+								case DialogInterface.BUTTON_POSITIVE:
+									break;
+								}
+							}
+						};
+
+						AlertDialog.Builder builder = new AlertDialog.Builder(act);
+						builder
+						.setMessage("You have received " + count + " likes on your pictures!")
+						.setPositiveButton("OK", dialogClickListener)
+						.show();
+					}
+				}
+			});
+		}
 	}
 	
 	@Override

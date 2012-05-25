@@ -7,6 +7,7 @@ import java.util.List;
 import android.util.Log;
 
 import com.CatScan.Utils;
+import com.parse.CountCallback;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
@@ -304,5 +305,42 @@ public class Vote{
 			parse.saveInBackground(saveCallback);
 		else
 			parse.saveInBackground();
+	}
+	
+	/**
+	 * Count how many votes this user has recieved. This is done on a background thread
+	 * @param user The catUser in question
+	 * @param countPostsLiked This will be called when the votes are counted
+	 */
+	public static void queryVotesRecievedInBackground(CatUser user, final CountPostsLiked countPostsLiked){
+		// initialize query
+		ParseQuery query = new ParseQuery(Vote.OBJECT_NAME);
+		
+		// find all the posts that this user posted
+		ParseQuery innerQuery = new ParseQuery("CatPicture");
+		innerQuery.whereEqualTo("USER", user.getParseForQuery());
+
+		// find the votes that match the above query
+		query.whereMatchesQuery(Vote.POST, innerQuery);
+		query.whereEqualTo(Vote.VOTE_VALUE, new Boolean(true));
+		
+		// do the query
+		query.countInBackground(new CountCallback() {
+			public void done(int count, ParseException e) {
+				if (e == null) {
+					countPostsLiked.onCount(count);
+				} else {
+					Log.e(Utils.APP_TAG, Log.getStackTraceString(e));
+				}
+			}
+		});
+	}
+	
+	public interface CountPostsLiked{
+		/**
+		 * This is called when we are done counting votes on the server
+		 * @param count How many post have been voted on
+		 */
+		public void onCount(int count);
 	}
 }

@@ -28,6 +28,10 @@ class SaveUserOnInitial <ACTIVITY_TYPE extends CustomActivity>
 		if (Prefs.getNumberTimesOpened(applicationCtx) == 0)
 			if(!Utils.getCurrentUser().save())
 				return "Cannot use app without Server";
+			else
+				Prefs.setIsUserSaved(applicationCtx, true);
+		else
+			Prefs.setIsUserSaved(applicationCtx, true);
 		
 		return null;
 	}
