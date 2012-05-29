@@ -17,19 +17,20 @@ import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.SaveCallback;
+import com.tools.Tools;
 import com.tools.WidthHeight;
 
 public class CatPicture{
 
 	// the object name
-	private static final String OBJECT_NAME = "CatPicture"; 		// the object name for the ParseObject
+	public static final String OBJECT_NAME = "CatPicture"; 		// the object name for the ParseObject
 
 	// the fields
 	private static final String FILE = "FILE";  					// The filename field for the picture
 	private static final String RAW = "RAW_FILE"; 					// The raw picture with no captions
 	private static final String TITLE = "TITLE"; 					// The title of the picture
 	private static final String CAPTIONS = "CAPTIONS"; 				// The captions in the picture
-	private static final String USER = "USER";						// The user who created the post
+	public static final String USER = "USER";						// The user who created the post
 	private static final String RATING = "RATING"; 					// The rating this post has
 	private static final String N_REPORTS = "N_REPORTS";			// The number of reports this post has
 	private static final String N_COMMENTS = "N_COMMENTS"; 			// The number of comments this post has
@@ -289,7 +290,7 @@ public class CatPicture{
 
 		// resize the data
 		if (desiredWidth != null && desiredHeight != null)
-			data = com.tools.Tools.resizeByteArray(data, new WidthHeight(desiredWidth, desiredHeight), "resizeSmall", null, 0f, 100);
+			data = Tools.resizeByteArray(data, new WidthHeight(desiredWidth, desiredHeight), "resizeSmall", null, 0f, 100);
 		return BitmapFactory.decodeByteArray(data, 0, data.length);
 	}
 	

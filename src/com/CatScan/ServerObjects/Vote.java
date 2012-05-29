@@ -317,8 +317,9 @@ public class Vote{
 		ParseQuery query = new ParseQuery(Vote.OBJECT_NAME);
 		
 		// find all the posts that this user posted
-		ParseQuery innerQuery = new ParseQuery("CatPicture");
-		innerQuery.whereEqualTo("USER", user.getParseForQuery());
+		ParseQuery innerQuery = new ParseQuery(CatPicture.OBJECT_NAME);
+		innerQuery.whereEqualTo(CatPicture.USER, user.getParseForQuery());
+		//TODO: accessing private members of catpicture.. fix
 
 		// find the votes that match the above query
 		query.whereMatchesQuery(Vote.POST, innerQuery);

@@ -10,6 +10,7 @@ import com.CatScan.Utils;
 import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseObject;
+import com.tools.Tools;
 
 public class ParseFileHelper {
 	
@@ -47,7 +48,7 @@ public class ParseFileHelper {
 	 */
 	public byte[] getData()
 	throws ParseException{
-		String str = com.tools.Tools.randomString(5);
+		String str = Tools.randomString(5);
 		Log.i(Utils.APP_TAG, parsefile.getName() + " " + str + " getData called");
 		
 		// launch the call
