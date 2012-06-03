@@ -58,7 +58,7 @@ public class Utils {
 			}
 			return file.getAbsolutePath();
 		}catch(Exception e){
-			Log.d(Utils.APP_TAG, "file not saved to external storage");
+			Log.e(Utils.APP_TAG, Log.getStackTraceString(e));
 			return null;
 		}
 	}
@@ -83,7 +83,7 @@ public class Utils {
 		// now make the folder
 		File dir = new File(path);
 		if(!dir.exists() && !dir.mkdirs())
-			Log.d(Utils.APP_TAG, "could not create directory");
+			Log.e(Utils.APP_TAG, "could not create directory");
 
 		return path;
 	}
@@ -105,7 +105,7 @@ public class Utils {
 			byte[] byteArray = stream.toByteArray();
 			return byteArray;
 		}catch(Exception e){
-			Log.d(Utils.APP_TAG, "file not read from external storage " + e.getMessage());
+			Log.e(Utils.APP_TAG, Log.getStackTraceString(e));
 			return null;
 		}
 	}
