@@ -1,5 +1,6 @@
 package com.CatScan;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 import com.CatScan.ServerObjects.CatPicture;
@@ -16,6 +17,7 @@ import android.widget.BaseAdapter;
 import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 public class PicturesAdapter
@@ -61,9 +63,9 @@ extends BaseAdapter{
         				return null;
         			}
 
-        			@Override
+        			//@Override
         			public Bitmap onFullSizeWeb(CatPicture fullSizeData,
-        					int desiredWidth, int desiredHeight) {
+        					int desiredWidth, int desiredHeight, WeakReference<ProgressBar> weakProgress) {
         				return fullSizeData.getPicture(act, desiredWidth, desiredHeight);
         			}
 
@@ -170,7 +172,7 @@ extends BaseAdapter{
 		});
 
         // show the view
-        imageLoader.DisplayImage(cat.getId(), cat, cat, image);
+        imageLoader.DisplayImage(cat.getId(), cat, cat, image, null);
         
         // call the image switcher
         if (imageSwitcher != null)
