@@ -418,8 +418,7 @@ extends CustomActivity {
 		}
 		com.tools.Tools.sharePicture(
 				ctx,
-				Prefs.getName(ctx) + " shared a picture with you",
-				"Here is a cool LOLcat. You can view more and make your own! Just download CatScan on the android market at this link: "+
+				Prefs.getName(ctx) + " likes this funny LOLcat made with CatScan",
 				Utils.APP_URL,
 				path,
 				"Choose a Method to Share");
