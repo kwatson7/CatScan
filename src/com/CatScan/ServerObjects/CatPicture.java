@@ -17,6 +17,7 @@ import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.SaveCallback;
+import com.tools.ImageProcessing.ResizeType;
 import com.tools.Tools;
 import com.tools.WidthHeight;
 
@@ -290,7 +291,7 @@ public class CatPicture{
 
 		// resize the data
 		if (desiredWidth != null && desiredHeight != null)
-			data = Tools.resizeByteArray(data, new WidthHeight(desiredWidth, desiredHeight), "resizeSmall", null, 0f, 100);
+			return com.tools.ImageProcessing.resizeByteArray(data, new WidthHeight(desiredWidth, desiredHeight), ResizeType.RESIZE_SMALL, ctx, 0f);
 		return BitmapFactory.decodeByteArray(data, 0, data.length);
 	}
 	

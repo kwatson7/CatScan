@@ -44,10 +44,9 @@ public class Utils {
 		try{
 			File file = getExternalStoreFile(name);
 
-			SuccessReason out = com.tools.Tools.saveByteDataToFile(
+			SuccessReason out = com.tools.ImageProcessing.saveByteDataToFile(
 					ctx.getApplicationContext(),
 					data,
-					"",
 					false,
 					file.getAbsolutePath(),
 					null,
