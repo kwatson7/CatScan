@@ -174,6 +174,7 @@ extends CustomActivity{
 	}
 
 	private ColorPickerDialog colorPickerDialog = null;
+	
 	/**
 	 * Select the color and then place the caption
 	 */

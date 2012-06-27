@@ -20,6 +20,7 @@ import com.tools.images.MemoryCache;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -345,7 +346,7 @@ extends CustomActivity {
 	}
 	
 	/**
-	 * This is called every time the adapter switches views, so we ecan pre-fetch the next images
+	 * This is called every time the adapter switches views, so we can pre-fetch the next images
 	 */
 	private ImageSwitcher imageSwitcher = new ImageSwitcher() {
 		
@@ -359,6 +360,7 @@ extends CustomActivity {
 			currentPosition = position;
 			
 			// fetch the next picture, so it's ready
+			final Context ctx2 = ctx.getApplicationContext();
 			new Thread(new Runnable() {
 				public void run() {
 					android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_LESS_FAVORABLE);
@@ -367,7 +369,7 @@ extends CustomActivity {
 						String id = catsList.get(nextPicture).getId();
 						if (!grabbedPictures.contains(id)){
 							grabbedPictures.add(id);
-							catsList.get(nextPicture).fetchPictureFromServer(ctx);
+							catsList.get(nextPicture).fetchPictureFromServer(ctx2);
 						}
 					}
 				}
