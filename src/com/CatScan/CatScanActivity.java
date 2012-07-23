@@ -421,7 +421,7 @@ extends CustomActivity {
 		com.tools.Tools.sharePicture(
 				ctx,
 				Prefs.getName(ctx) + " likes this funny LOLcat made with CatScan",
-				Utils.APP_URL,
+				"I made this with CatScan on my phone, pretty cool " + Utils.APP_URL,
 				path,
 				"Choose a Method to Share");
 	}
