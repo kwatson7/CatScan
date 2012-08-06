@@ -206,7 +206,7 @@ extends CustomActivity {
 			}
 			
 			// make the intent with all the data required to load the picture
-			Intent intent = imageCaptureHelper.createIntentWithCorrectExtras(ctx, AddCaptionsToImage.class, resultCode, data);
+			Intent intent = imageCaptureHelper.createIntentWithCorrectExtrasAfterCapture(ctx, AddCaptionsToImage.class, resultCode, data);
 			if (intent != null)
 				startActivityForResult(intent, ACTIVITY_CALLS.EDIT_PICTURE.ordinal());
 			break;
@@ -441,7 +441,7 @@ extends CustomActivity {
 			Intent intent = ImageCapture.createIntentToPassPhoto(
 					ctx,
 					AddCaptionsToImage.class,
-					null, path);
+					null, path, true);
 			startActivity(intent);
 		}else{
 			

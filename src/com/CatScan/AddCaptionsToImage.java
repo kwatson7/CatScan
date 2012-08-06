@@ -80,7 +80,7 @@ extends CustomActivity{
 
 		// read the photo passed in
 		//TODO:this is slow, should be done in background
-		photo = ImageCapture.getBitmap(this, getIntent().getExtras(), true);
+		photo = ImageCapture.getBitmap(this, getIntent().getExtras());
 
 		// get configuration data and copy over any old data from old configuration.
 		ConfigurationProperties config = (ConfigurationProperties) getLastNonConfigurationInstance();

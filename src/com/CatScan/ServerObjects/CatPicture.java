@@ -381,7 +381,7 @@ public class CatPicture{
 		try {
 			data = rawFileHelper.getData();
 		} catch (ParseException e) {
-			Log.e("TAG", Log.getStackTraceString(e));
+			Log.e(Utils.APP_TAG, Log.getStackTraceString(e));
 		}
 		if (data == null || data.length == 0)
 			return null;

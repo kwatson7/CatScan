@@ -50,7 +50,8 @@ extends CustomAsyncTask<ACTIVITY_TYPE, Void, String>{
 				applicationCtx,
 				AddCaptionsToImage.class,
 				null,
-				result);
+				result,
+				true);
 		callingActivity.startActivity(intent);
 	}
 
