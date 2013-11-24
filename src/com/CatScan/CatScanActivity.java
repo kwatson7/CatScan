@@ -24,22 +24,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Display;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
-import android.view.ViewGroup;
 import android.view.Window;
-import android.view.animation.Animation;
-import android.view.animation.Animation.AnimationListener;
-import android.view.animation.AnimationUtils;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -173,41 +163,6 @@ extends CustomActivity {
 		
 		// grab cursor for all the groups
 		getPictures(false);
-		
-		// put on overlay
-		FrameLayout frame = (FrameLayout) findViewById(R.id.frameLayout);
-		LayoutInflater inflater= (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		
-		View view = inflater.inflate(R.layout.help_layout, frame);
-		View help = view.findViewById(R.id.helpImage);		
-		frame.addView(help);
-		
-		// remove overlay when touched
-		help.setOnTouchListener(new OnTouchListener() {
-			
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				final View v1 = v;
-				new AnimationUtils();
-				Animation anim = AnimationUtils.loadAnimation(ctx, R.anim.fade_out);
-				
-				anim.setAnimationListener(new AnimationListener() {
-					@Override
-					public void onAnimationStart(Animation animation) {	}
-					@Override
-					public void onAnimationRepeat(Animation animation) {}
-					
-					@Override
-					public void onAnimationEnd(Animation animation) {
-						FrameLayout frame = (FrameLayout) findViewById(R.id.frameLayout);
-						frame.removeView((View) v1.getParent());
-					}
-				});
-				
-				((View)v.getParent()).startAnimation(anim);
-				return true;
-			}
-		});		
 	}
 
 	@Override
